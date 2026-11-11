@@ -1125,7 +1125,7 @@ class AppVIP {
                   </span>
                 </div>
 
-                <div class="supercar-pod-body">
+                <div class="supercar-pod-body" style="padding: 20px; display: flex !important; flex-direction: column !important; justify-content: space-between; flex: 1; gap: 14px; box-sizing: border-box; width: 100%;">
                   <div>
                     <span style="font-size: 11px; color: #ff8901; font-weight: 700; text-transform: uppercase;">${v.brand} · ${v.year}</span>
                     <h3 style="font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 2px;">${v.model}</h3>
@@ -1133,7 +1133,7 @@ class AppVIP {
                   </div>
 
                   <!-- Telemetría HUD Specs -->
-                  <div class="supercar-hud-specs">
+                  <div class="supercar-hud-specs" style="display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 8px; padding: 12px; margin: 12px 0; width: 100%; box-sizing: border-box;">
                     <div class="supercar-spec-item"><span>Kilometraje</span><strong>${formatNumber(v.mileage)} km</strong></div>
                     <div class="supercar-spec-item"><span>Transmisión</span><strong>${v.transmission}</strong></div>
                     <div class="supercar-spec-item"><span>Combustible</span><strong>${v.fuel}</strong></div>

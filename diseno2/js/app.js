@@ -1144,32 +1144,32 @@ class AppV2 {
     const todayStr = getTodayISO();
 
     const renderFlipCardV2 = (act) => `
-      <div class="flip-wrapper-v2" data-act-id="${act.id}" style="height: 250px;">
-        <div class="flip-inner-v2">
+      <div class="flip-wrapper-v2" data-act-id="${act.id}" style="width: 100%; height: 250px; display: block; flex-shrink: 0; min-width: 0;">
+        <div class="flip-inner-v2" style="width: 100%; height: 100%;">
           <!-- Frente -->
-          <div class="flip-face-v2 flip-front-v2">
-            <div class="d-flex justify-between align-center">
-              <div class="act-icon-v2" style="width: 42px; height: 42px;">${getIcon(act.iconType || 'gestion')}</div>
+          <div class="flip-face-v2 flip-front-v2" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; padding: 18px 20px;">
+            <div class="d-flex justify-between align-center" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div class="act-icon-v2" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">${getIcon(act.iconType || 'gestion')}</div>
               <span class="badge-v2 ${act.status === 'completada' ? 'badge-v2-green' : (act.status === 'en_proceso' ? 'badge-v2-amber' : 'badge-v2-dark')}" style="font-size: 10px;">
                 ${act.status}
               </span>
             </div>
-            <h4 class="act-title-v2" style="font-size: 14px; margin-top: 10px;">${act.title}</h4>
+            <h4 class="act-title-v2" style="font-size: 14px; margin-top: 10px; word-break: break-word; white-space: normal; line-height: 1.4;">${act.title}</h4>
             <div style="font-size: 12px; color: #6e6764; margin-top: 6px;">Resp: <strong>${act.responsible}</strong></div>
-            <div class="d-flex justify-between align-center" style="font-size: 11px; color: #6e6764; border-top: 1px solid #eae7e5; padding-top: 8px; margin-top: auto;">
+            <div class="d-flex justify-between align-center" style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e6764; border-top: 1px solid #eae7e5; padding-top: 8px; margin-top: auto; width: 100%;">
               <span>${act.time || '09:00'} · ${formatDate(act.date, 'short')}</span>
               <span class="font-bold text-orange">Girar ↻</span>
             </div>
           </div>
           <!-- Reverso -->
-          <div class="flip-face-v2 flip-back-v2">
+          <div class="flip-face-v2 flip-back-v2" style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; padding: 18px 20px;">
             <div>
               <span style="font-size: 9px; font-weight: 800; color: #ff8901; text-transform: uppercase;">Detalle de Asignación</span>
               <h5 style="font-size: 13px; font-weight: 800; color: #251f1d;">${act.responsible}</h5>
               <p style="font-size: 11px; margin-top: 6px; color: #251f1d;">${act.description || 'Sin notas.'}</p>
               ${act.observations ? `<p class="input-italic" style="font-size: 10px; color: #6e6764; margin-top: 4px;">"${act.observations}"</p>` : ''}
             </div>
-            <div class="d-flex justify-between align-center" style="border-top: 1px solid #eae7e5; padding-top: 8px; margin-top: auto;">
+            <div class="d-flex justify-between align-center" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eae7e5; padding-top: 8px; margin-top: auto; width: 100%;">
               <button class="btn-v2 btn-v2-outline btn-v2-sm btn-toggle-act-status" data-act-id="${act.id}" style="padding: 4px 8px; font-size: 11px;">
                 ${act.status === 'completada' ? 'Pendiente' : 'Completar'}
               </button>
@@ -1222,34 +1222,34 @@ class AppV2 {
         <div id="subtab-act-content-v2" style="display: none;">
           <div class="exec-kanban-board">
             <!-- Columna 1: Pendientes -->
-            <div class="kanban-col">
+            <div class="kanban-col" style="min-width: 0; width: 100%;">
               <div class="kanban-col-header">
                 <span class="kanban-col-title" style="color: #6e6764;">📌 Pendientes</span>
                 <span class="badge-v2 badge-v2-dark">${activities.filter(a => a.status === 'pendiente').length}</span>
               </div>
-              <div class="kanban-cards-stack">
+              <div class="kanban-cards-stack" style="display: flex !important; flex-direction: column !important; gap: 16px; width: 100%;">
                 ${activities.filter(a => a.status === 'pendiente').map(act => renderFlipCardV2(act)).join('')}
               </div>
             </div>
 
             <!-- Columna 2: En Proceso -->
-            <div class="kanban-col" style="background-color: #fffdf8; border-color: rgba(245, 158, 11, 0.3);">
+            <div class="kanban-col" style="background-color: #fffdf8; border-color: rgba(245, 158, 11, 0.3); min-width: 0; width: 100%;">
               <div class="kanban-col-header" style="border-bottom-color: rgba(245, 158, 11, 0.4);">
                 <span class="kanban-col-title" style="color: #d97706;">⚙️ En Proceso</span>
                 <span class="badge-v2 badge-v2-amber">${activities.filter(a => a.status === 'en_proceso').length}</span>
               </div>
-              <div class="kanban-cards-stack">
+              <div class="kanban-cards-stack" style="display: flex !important; flex-direction: column !important; gap: 16px; width: 100%;">
                 ${activities.filter(a => a.status === 'en_proceso').map(act => renderFlipCardV2(act)).join('')}
               </div>
             </div>
 
             <!-- Columna 3: Completadas -->
-            <div class="kanban-col" style="background-color: #f7fdfa; border-color: rgba(16, 185, 129, 0.3);">
+            <div class="kanban-col" style="background-color: #f7fdfa; border-color: rgba(16, 185, 129, 0.3); min-width: 0; width: 100%;">
               <div class="kanban-col-header" style="border-bottom-color: rgba(16, 185, 129, 0.4);">
                 <span class="kanban-col-title" style="color: #10b981;">✅ Completadas</span>
                 <span class="badge-v2 badge-v2-green">${activities.filter(a => a.status === 'completada').length}</span>
               </div>
-              <div class="kanban-cards-stack">
+              <div class="kanban-cards-stack" style="display: flex !important; flex-direction: column !important; gap: 16px; width: 100%;">
                 ${activities.filter(a => a.status === 'completada').map(act => renderFlipCardV2(act)).join('')}
               </div>
             </div>
@@ -1666,7 +1666,7 @@ class AppV2 {
 
         <!-- Cuadrícula de Tarjetas Horizontales Showroom Widescreen V2 -->
         ${this.invDisplayMode === 'cards' ? `
-          <div class="veh-horizontal-stack">
+          <div class="veh-horizontal-stack" style="display: flex !important; flex-direction: column !important; gap: 24px; width: 100%;">
             ${vehs.map(v => {
               const img = (v.images && v.images[0]) || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80';
               let badgeClass = 'badge-v2-green';
@@ -1674,14 +1674,14 @@ class AppV2 {
               if (v.status === 'vendido') badgeClass = 'badge-v2-dark';
 
               return `
-                <div class="veh-card-horizontal">
-                  <div class="veh-h-media">
+                <div class="veh-card-horizontal" style="display: grid; grid-template-columns: 320px 1fr; width: 100%; box-sizing: border-box;">
+                  <div class="veh-h-media" style="width: 100%; height: 100%; min-height: 220px; position: relative; overflow: hidden;">
                     <img src="${img}" alt="${v.model}" class="veh-h-img" loading="lazy" />
                     <span class="badge-v2 ${badgeClass}" style="position: absolute; top: 12px; left: 12px; font-size: 10px;">${v.status.toUpperCase()}</span>
                     <span style="position: absolute; bottom: 12px; left: 12px; background: rgba(37,31,29,0.85); color: #fff; padding: 4px 9px; border-radius: 4px; font-size: 11px; font-weight: 700;">${v.inventoryId}</span>
                   </div>
 
-                  <div class="veh-h-content">
+                  <div class="veh-h-content" style="padding: 24px; width: 100%; box-sizing: border-box;">
                     <div class="d-flex justify-between align-start flex-wrap gap-2">
                       <div>
                         <h3 style="font-size: 18px; font-weight: 800; color: #251f1d;">${v.brand} ${v.model}</h3>

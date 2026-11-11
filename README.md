@@ -118,10 +118,25 @@ Proporciona un panorama comercial inmediato y en tiempo real:
 
 ## 7. Instrucciones para Ejecutar
 
+### Opción A: Visualización Inmediata en Navegador (Sin dependencias)
 1. Abre la carpeta `C:\Users\mktpsf\Desktop\Outlet Autocorp\`.
 2. Puedes abrir cualquiera de los 4 diseños en tu navegador:
-   - **Diseño 1**: Haz doble clic en [**`index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/index.html).
-   - **Diseño 2**: Haz doble clic en [**`diseno2/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno2/index.html).
-   - **Diseño 3**: Haz doble clic en [**`diseno3/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno3/index.html).
-   - **Diseño 4**: Haz doble clic en [**`diseno4/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno4/index.html).
+   - **Diseño 1 (Clásico)**: Haz doble clic en [**`index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/index.html).
+   - **Diseño 2 (Executive Studio)**: Haz doble clic en [**`diseno2/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno2/index.html).
+   - **Diseño 3 (Titanium Glass Studio)**: Haz doble clic en [**`diseno3/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno3/index.html).
+   - **Diseño 4 (Carbon VIP con Modo Día/Noche)**: Haz doble clic en [**`diseno4/index.html`**](file:///c:/Users/mktpsf/Desktop/Outlet%20Autocorp/diseno4/index.html).
 3. Utiliza la barra superior de cada pantalla para alternar al instante entre cualquier diseño.
+
+### Opción B: Proyecto Next.js 14+ (App Router con React)
+El proyecto cuenta con la estructura modular completa en `src/`:
+- **Contexto y Estado Global**: `src/context/StoreContext.jsx` con persistencia en `localStorage`.
+- **Vistas y Páginas**: `src/app/page.jsx` (Dashboard), `src/app/guardias/page.jsx`, `src/app/clientes/page.jsx`, `src/app/inventario/page.jsx`.
+- **Componentes Modulares**: `src/components/general/`, `src/components/guardias/`, `src/components/clientes/`, `src/components/inventario/`, `src/components/layout/`, `src/components/ui/`.
+- **Utilidades & Semilla de Datos**: `src/lib/utils.js` (formato MXN, fechas, cálculo de periodos) y `src/lib/seedData.js`.
+
+Para ejecutar en entorno Node.js:
+```bash
+npm install
+npm run dev
+```
+La aplicación iniciará en `http://localhost:3000`.
