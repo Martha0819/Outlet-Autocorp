@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#161312">
+  <title>Outlet Autocorp — Mini CRM (Diseño 4: Carbon VIP Lounge)</title>
+
+  <!-- Google Fonts: Montserrat (Alternativa autorizada a Gotham) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- SELECTOR GLOBAL DE DISEÑOS -->
+  <div class="vip-design-selector">
+    <span>CONMUTADOR DE DISEÑOS OUTLET AUTOCORP</span>
+    <div>
+      <a href="../index.html">Diseño 1: Clásico</a>
+      <a href="../diseno2/index.html">Diseño 2: Executive</a>
+      <a href="../diseno3/index.html">Diseño 3: Titanium Glass</a>
+      <a href="index.html" class="active">Diseño 4: Carbon VIP</a>
+    </div>
+  </div>
+
+  <!-- ENCABEZADO VIP PERFORMANCE -->
+  <header class="vip-header">
+    <div class="vip-header-inner">
+      <div class="vip-brand">
+        <div class="vip-badge-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+        </div>
+        <div>
+          <span class="vip-brand-title">OUTLET AUTOCORP</span>
+          <div class="vip-brand-sub">CARBON VIP PERFORMANCE LOUNGE</div>
+        </div>
+      </div>
+
+      <nav class="vip-nav-dock">
+        <button class="vip-nav-btn active" data-view="general">General</button>
+        <button class="vip-nav-btn" data-view="guardias">Guardias & Actividades</button>
+        <button class="vip-nav-btn" data-view="clientes">Clientes</button>
+        <button class="vip-nav-btn" data-view="inventario">Inventario</button>
+      </nav>
+
+      <div class="d-flex align-center gap-2">
+        <button class="btn-vip btn-vip-outline btn-vip-sm" id="btn-theme-toggle" style="cursor: pointer;" title="Alternar entre Fondo Oscuro (Noche) y Fondo Claro (Día)">
+          <span id="theme-icon">☀️</span> <span id="theme-text">Modo Día</span>
+        </button>
+        <button class="btn-vip btn-vip-outline btn-vip-sm" id="btn-vip-reset">↺ Reset demo</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- BANNER VIP -->
+  <section class="vip-hero-banner">
+    <div class="vip-hero-card">
+      <div>
+        <span class="badge-vip badge-vip-orange mb-2">Showroom VIP en Vivo</span>
+        <h1 class="vip-title" id="vip-hero-title">Vista General — Cockpit de Rendimiento</h1>
+        <div class="text-muted mt-1" style="font-size: 13px;">Monitoreo comercial de alta precisión · <span id="vip-live-date">Hoy</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="vip-content" id="vip-view-container">
+    <!-- Vistas inyectadas aquí -->
+  </main>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="js/app.js?v=4.2"></script>
+</body>
+</html>

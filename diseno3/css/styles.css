@@ -1,0 +1,651 @@
+/* ==========================================================================
+   OUTLET AUTOCORP — DISEÑO 3: TITANIUM GLASS STUDIO
+   Identidad visual: Naranja #ff8901, Titanio claro #edf0f4, Oscuro #251f1d
+   Tipografía: Montserrat (Alternativa autorizada a Gotham)
+   Estilo: Glassmorphism Ultra-Limpio, Neomórfico & Holographic Telemetry
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap');
+
+:root {
+  --primary-orange: #ff8901;
+  --primary-orange-hover: #e57a00;
+  --primary-orange-glow: rgba(255, 137, 1, 0.3);
+  --primary-orange-light: rgba(255, 137, 1, 0.12);
+
+  --bg-titanium: #edf0f4;
+  --bg-glass-card: rgba(255, 255, 255, 0.78);
+  --bg-glass-solid: rgba(255, 255, 255, 0.92);
+  --bg-glass-elevated: rgba(255, 255, 255, 0.88);
+
+  --text-main: #251f1d;
+  --text-muted: #6b6360;
+  --text-titanium: #4a4441;
+
+  --border-glass: rgba(255, 255, 255, 0.95);
+  --border-subtle: #dbe0e6;
+  --border-orange: rgba(255, 137, 1, 0.4);
+
+  --status-available: #10b981;
+  --status-available-bg: rgba(16, 185, 129, 0.12);
+  --status-reserved: #f59e0b;
+  --status-reserved-bg: rgba(245, 158, 11, 0.12);
+  --status-sold: #6b7280;
+  --status-sold-bg: rgba(107, 114, 128, 0.12);
+
+  --shadow-glass: 0 10px 30px rgba(37, 31, 29, 0.05), 0 1px 3px rgba(37, 31, 29, 0.03);
+  --shadow-hover: 0 16px 40px rgba(255, 137, 1, 0.14), 0 4px 12px rgba(37, 31, 29, 0.06);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
+  --radius-full: 9999px;
+
+  --font-family: 'Montserrat', 'Gotham', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --transition-fast: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-main);
+  background-color: var(--bg-titanium);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(255, 137, 1, 0.07) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(37, 31, 29, 0.05) 0px, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-bold {
+  font-family: var(--font-family);
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.text-italic, .input-italic { font-style: italic; }
+.text-bold-italic { font-weight: 700; font-style: italic; }
+.text-muted { color: var(--text-muted); }
+.text-orange { color: var(--primary-orange); }
+
+/* Flexbox & Layout Core Utilities */
+.d-flex { display: flex !important; }
+.flex-column { display: flex !important; flex-direction: column !important; }
+.flex-row { display: flex !important; flex-direction: row !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.align-center { align-items: center !important; }
+.align-start { align-items: flex-start !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-center { justify-content: center !important; }
+.gap-1 { gap: 4px !important; }
+.gap-2 { gap: 8px !important; }
+.gap-3 { gap: 12px !important; }
+.gap-4 { gap: 16px !important; }
+.w-100 { width: 100% !important; }
+.p-0 { padding: 0 !important; }
+.p-4 { padding: 24px !important; }
+
+/* Selector Global */
+.glass-design-selector {
+  background: #251f1d;
+  color: #ffffff;
+  padding: 6px 28px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 137, 1, 0.35);
+  position: relative;
+  z-index: 1000;
+}
+
+.glass-selector-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.glass-selector-chips a {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d8d3d0;
+  padding: 3px 12px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.glass-selector-chips a:hover,
+.glass-selector-chips a.active {
+  background: var(--primary-orange);
+  color: #251f1d;
+  font-weight: 700;
+}
+
+/* Encabezado Glassmorphism */
+.glass-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 20px rgba(37, 31, 29, 0.04);
+}
+
+.glass-header-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 28px;
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.glass-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.glass-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--primary-orange) 0%, #e57a00 100%);
+  color: #251f1d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px var(--primary-orange-glow);
+}
+
+.glass-brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #251f1d;
+}
+
+.glass-brand-sub {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--primary-orange);
+}
+
+/* Nav Dock */
+.glass-nav-dock {
+  display: flex;
+  background: rgba(237, 240, 244, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 4px;
+  gap: 4px;
+}
+
+.glass-nav-btn {
+  background: transparent;
+  border: none;
+  padding: 9px 20px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.glass-nav-btn:hover {
+  color: var(--text-main);
+}
+
+.glass-nav-btn.active {
+  background: #ffffff;
+  color: #251f1d;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 31, 29, 0.08);
+  border: 1px solid rgba(255, 137, 1, 0.3);
+}
+
+/* Botones Glass */
+.btn-glass {
+  background: #ffffff;
+  color: #251f1d;
+  border: 1px solid var(--border-subtle);
+  padding: 9px 18px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-glass);
+}
+
+.btn-glass:hover {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-glass-primary {
+  background: var(--primary-orange);
+  color: #251f1d;
+  border-color: var(--primary-orange);
+  box-shadow: 0 6px 18px var(--primary-orange-glow);
+}
+
+.btn-glass-primary:hover {
+  background: var(--primary-orange-hover);
+  color: #251f1d;
+  box-shadow: 0 8px 24px var(--primary-orange-glow);
+}
+
+.btn-glass-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+/* Hero Banner */
+.glass-hero-banner {
+  max-width: 1440px;
+  margin: 24px auto 0 auto;
+  padding: 0 28px;
+}
+
+.glass-hero-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.65) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: 26px 34px;
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-badge-pill {
+  display: inline-block;
+  background: var(--primary-orange-light);
+  color: #b86200;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 137, 1, 0.25);
+}
+
+.glass-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #251f1d;
+}
+
+.glass-meta-line {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Contenido Principal */
+.glass-content {
+  max-width: 1440px;
+  margin: 28px auto 60px auto;
+  padding: 0 28px;
+}
+
+/* Tarjetas Genéricas Glass */
+.card-glass {
+  background: var(--bg-glass-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-glass);
+  transition: all var(--transition-fast);
+}
+
+.card-glass:hover {
+  box-shadow: 0 14px 36px rgba(37, 31, 29, 0.08);
+}
+
+/* ==========================================================================
+   KPIS: MATRIZ HOLOGRÁFICA TITANIUM GLASS
+   ========================================================================== */
+.hologram-matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 1050px) {
+  .hologram-matrix-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 680px) {
+  .hologram-matrix-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hologram-kpi-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.72) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-glass);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.hologram-kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary-orange);
+  opacity: 0.8;
+}
+
+.hologram-kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(255, 137, 1, 0.35);
+}
+
+.holo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.holo-code {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.holo-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: #251f1d;
+  letter-spacing: -0.5px;
+}
+
+.holo-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.holo-progress-bar {
+  height: 6px;
+  background: rgba(37, 31, 29, 0.08);
+  border-radius: var(--radius-full);
+  margin-top: 14px;
+  overflow: hidden;
+}
+
+.holo-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, #ff8901 0%, #e57a00 100%);
+}
+
+/* Gráficas Glass */
+.charts-glass-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 900px) {
+  .charts-glass-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Vista 2: Timeline de Guardias & Tarjetas de Actividades */
+.timeline-track-v3 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  padding-left: 28px;
+}
+
+.timeline-track-v3::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--primary-orange) 0%, rgba(37,31,29,0.1) 100%);
+}
+
+.timeline-entry-v3 {
+  position: relative;
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  padding: 18px 22px;
+  box-shadow: var(--shadow-glass);
+}
+
+.timeline-entry-v3::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 22px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary-orange);
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 8px var(--primary-orange-glow);
+}
+
+/* 3D Glass Flip Cards para Actividades */
+.glass-flip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+}
+
+.glass-flip-wrapper {
+  perspective: 1200px;
+  height: 250px;
+  cursor: pointer;
+  position: relative;
+}
+
+.glass-flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-style: preserve-3d;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-glass);
+}
+
+.glass-flip-wrapper:hover .glass-flip-inner,
+.glass-flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.glass-flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.glass-flip-back {
+  transform: rotateY(180deg);
+  background: #ffffff;
+  border: 2px solid var(--primary-orange);
+  box-shadow: 0 10px 30px var(--primary-orange-glow);
+}
+
+/* Vista 3: Clientes CRM Cards Grid */
+.clients-glass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 22px;
+}
+
+.client-glass-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  padding: 22px;
+  box-shadow: var(--shadow-glass);
+  transition: all var(--transition-fast);
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between;
+}
+
+.client-glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(255, 137, 1, 0.35);
+}
+
+/* Vista 4: Inventario Glass Showroom */
+.inv-glass-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+.veh-glass-card {
+  background: #ffffff;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  box-shadow: var(--shadow-glass);
+  display: flex !important;
+  flex-direction: column !important;
+  transition: all var(--transition-fast);
+}
+
+.veh-glass-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+  border-color: rgba(255, 137, 1, 0.4);
+}
+
+.veh-glass-media {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: #251f1d;
+  overflow: hidden;
+}
+
+.veh-glass-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s ease;
+}
+
+.veh-glass-card:hover .veh-glass-img {
+  transform: scale(1.06);
+}
+
+.veh-glass-body {
+  padding: 22px;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between;
+  flex: 1;
+  gap: 14px;
+}
+
+.veh-glass-specs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--bg-titanium);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+}
+
+.spec-glass-item span {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.spec-glass-item strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #251f1d;
+  margin-top: 2px;
+}
+
+.badge-glass-orange {
+  background: var(--primary-orange-light);
+  color: #b86200;
+  border: 1px solid rgba(255, 137, 1, 0.3);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.badge-glass-green {
+  background: var(--status-available-bg);
+  color: var(--status-available);
+  border: 1px solid var(--status-available);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+}

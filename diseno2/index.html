@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#251f1d">
+  <title>Outlet Autocorp — Mini CRM (Diseño Ejecutivo V2)</title>
+
+  <!-- Google Fonts: Montserrat (Alternativa autorizada a Gotham) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap" rel="stylesheet">
+
+  <!-- Estilos del Diseño 1 como base compartida y estilos del Diseño 2 -->
+  <link rel="stylesheet" href="../css/styles.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- SELECTOR GLOBAL DE DISEÑOS -->
+  <div style="background:#251f1d; color:#fff; padding:6px 24px; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:space-between; z-index:999; position:relative; border-bottom:1px solid rgba(255,137,1,0.3);">
+    <span>CONMUTADOR DE DISEÑOS OUTLET AUTOCORP</span>
+    <div style="display:flex; gap:6px;">
+      <a href="../index.html" style="background:rgba(255,255,255,0.1); color:#d1c8c5; padding:3px 10px; border-radius:4px; text-decoration:none;">Diseño 1: Clásico</a>
+      <a href="index.html" style="background:#ff8901; color:#251f1d; padding:3px 10px; border-radius:4px; font-weight:700; text-decoration:none;">Diseño 2: Executive</a>
+      <a href="../diseno3/index.html" style="background:rgba(255,255,255,0.1); color:#d1c8c5; padding:3px 10px; border-radius:4px; text-decoration:none;">Diseño 3: Titanium Glass</a>
+      <a href="../diseno4/index.html" style="background:rgba(255,255,255,0.1); color:#d1c8c5; padding:3px 10px; border-radius:4px; text-decoration:none;">Diseño 4: Carbon VIP</a>
+    </div>
+  </div>
+  <!-- BARRA SUPERIOR EJECUTIVA (TOP COMMAND BAR) -->
+  <header class="exec-header">
+    <div class="exec-header-container">
+      <div class="exec-brand-group">
+        <div class="brand-badge-v2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+        </div>
+        <div class="brand-titles-v2">
+          <span class="brand-name-v2">OUTLET AUTOCORP</span>
+          <span class="brand-tagline-v2">
+            <span class="tagline-pill">DISEÑO 2</span> Showroom Executive Studio
+          </span>
+        </div>
+      </div>
+
+      <!-- Floating Navigation Dock (Desktop) -->
+      <nav class="exec-nav-dock">
+        <button class="exec-nav-item active" data-view="general">
+          <span>General</span>
+        </button>
+        <button class="exec-nav-item" data-view="guardias">
+          <span>Guardias y actividades</span>
+        </button>
+        <button class="exec-nav-item" data-view="clientes">
+          <span>Clientes</span>
+        </button>
+        <button class="exec-nav-item" data-view="inventario">
+          <span>Inventario</span>
+        </button>
+      </nav>
+
+      <!-- Botones a la derecha: Conmutador de Diseño y Menú Móvil -->
+      <div class="exec-header-right">
+        <a href="../index.html" class="btn-switch-design" title="Regresar al Diseño 1 (Barra Lateral)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span>Ir a Diseño 1 (Original)</span>
+        </a>
+
+        <button class="btn-menu-mobile-v2" id="btn-toggle-mobile-v2" aria-label="Menú">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Drawer -->
+  <div class="mobile-drawer-v2" id="mobile-drawer-v2">
+    <button class="exec-nav-item active" data-view="general">General</button>
+    <button class="exec-nav-item" data-view="guardias">Guardias y actividades</button>
+    <button class="exec-nav-item" data-view="clientes">Clientes</button>
+    <button class="exec-nav-item" data-view="inventario">Inventario</button>
+    <a href="../index.html" class="btn-switch-design" style="margin-top: 8px;">← Ir a Diseño 1 (Original)</a>
+  </div>
+
+  <!-- BANNER DE ENCABEZADO DE SECCIÓN -->
+  <section class="section-hero-banner">
+    <div class="hero-banner-inner">
+      <div class="hero-info-group">
+        <span class="hero-view-tag">Outlet Autocorp · Plataforma Comercial</span>
+        <h1 class="hero-view-title" id="hero-view-title">Vista General — Dashboard</h1>
+      </div>
+      <div class="hero-meta-chips">
+        <div class="hero-chip">
+          <span class="chip-dot"></span>
+          <span>Lote Activo en Tiempo Real</span>
+        </div>
+        <div class="hero-chip">
+          <span id="hero-live-date">Hoy</span>
+        </div>
+        <button class="btn btn-outline-light btn-xs" id="btn-reset-demo-v2" style="border-radius: 9999px;">
+          ↺ Restablecer demo
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENEDOR DE LA VISTA -->
+  <main class="main-content-v2" id="view-container-v2">
+    <!-- Contenido inyectado dinámicamente -->
+  </main>
+
+  <!-- Contenedor Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Popover Flotante de Guardia -->
+  <div id="shift-popover-card" class="shift-popover card" style="display: none;"></div>
+
+  <!-- Script principal del Diseño 2 -->
+  <script src="js/app.js?v=2.2"></script>
+</body>
+</html>
