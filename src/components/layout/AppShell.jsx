@@ -69,14 +69,20 @@ export function AppShell({ children }) {
         <div className="app-layout">
           {/* Menú Lateral Fijo */}
           <aside className={`app-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
-            <div className="sidebar-brand">
-              <div className="brand-logo-icon">
-                <CarIcon size={24} />
-              </div>
-              <div className="brand-info">
-                <h1 className="brand-title">OUTLET AUTOCORP</h1>
-                <span className="brand-subtitle">Mini CRM Seminuevos</span>
-              </div>
+            <div className="sidebar-brand" style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Link href="/" style={{ display: 'block', width: '100%', textAlign: 'center' }}>
+                <img
+                  src="/logo-outlet-farrera.png"
+                  alt="Outlet Farrera Gran Remate"
+                  style={{
+                    maxWidth: '190px',
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))'
+                  }}
+                />
+              </Link>
             </div>
 
             <nav className="sidebar-nav">

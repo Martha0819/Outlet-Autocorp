@@ -31,7 +31,7 @@ export function AppHeader() {
     <header className="app-header">
       <div className="header-left">
         <div>
-          <div className="header-outlet-name">OUTLET AUTOCORP</div>
+          <div className="header-outlet-name">OUTLET FARRERA</div>
           <h2 className="header-view-title">{getPageTitle(pathname)}</h2>
         </div>
       </div>

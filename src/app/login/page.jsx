@@ -3,22 +3,15 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '@/context/StoreContext';
-import {
-  CarIcon,
-  UsersIcon,
-  DollarIcon,
-  CalendarIcon,
-  CloseIcon
-} from '@/components/ui/Icons';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, DEMO_USERS } = useStore();
 
+  // Estados del formulario
   const [email, setEmail] = useState('carlos.morales@autocorp.mx');
   const [password, setPassword] = useState('autocorp2026');
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState('usr-1');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -28,7 +21,7 @@ export default function LoginPage() {
     setErrorMsg('');
 
     if (!email.trim()) {
-      setErrorMsg('Por favor ingresa tu correo corporativo.');
+      setErrorMsg('Por favor ingresa tu usuario o correo.');
       return;
     }
     if (!password.trim()) {
@@ -40,493 +33,408 @@ export default function LoginPage() {
     setTimeout(() => {
       login(email.trim(), password);
       router.push('/');
-    }, 450);
-  };
-
-  const handleQuickLogin = (demoUser) => {
-    setEmail(demoUser.email);
-    setPassword('autocorp2026');
-    setLoading(true);
-    setTimeout(() => {
-      login(demoUser.email, 'autocorp2026');
-      router.push('/');
     }, 350);
   };
 
+  const handleQuickAdvisorLogin = (advisor) => {
+    setEmail(advisor.email);
+    setSelectedAdvisorId(advisor.id);
+    setLoading(true);
+    setTimeout(() => {
+      login(advisor.email, 'autocorp2026');
+      router.push('/');
+    }, 300);
+  };
+
+  // Fondo fotográfico automotriz de alta resolución en carretera
+  const carFullBgUrl = 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=85';
+
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', width: '100%', fontFamily: "'Montserrat', sans-serif", backgroundColor: '#ffffff' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        minHeight: '100vh',
+        fontFamily: "'Montserrat', sans-serif",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '30px 20px',
+        overflow: 'hidden',
+        backgroundColor: '#121110',
+        backgroundImage: `linear-gradient(135deg, rgba(18, 17, 16, 0.78) 0%, rgba(37, 31, 29, 0.85) 100%), url("${carFullBgUrl}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Sutil difuminado ambiental en el fondo para realzar la tarjeta central */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backdropFilter: 'blur(3px)',
+          WebkitBackdropFilter: 'blur(3px)',
+          pointerEvents: 'none'
+        }}
+      />
+
       {/* =========================================================================
-          PANEL IZQUIERDO: MARCA, PRESTIGIO AUTOMOTRIZ Y MÉTRICAS (50%)
+          TARJETA PRINCIPAL DE LOGIN
           ========================================================================= */}
       <div
         style={{
-          flex: 1,
-          backgroundColor: '#1c1715',
-          background: 'linear-gradient(145deg, #181312 0%, #251e1c 50%, #15100f 100%)',
-          color: '#ffffff',
-          padding: '48px 56px',
+          width: '100%',
+          maxWidth: '920px',
+          minHeight: '500px',
+          backgroundColor: '#ffffff',
+          borderRadius: '28px',
+          boxShadow: '0 30px 70px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(0, 0, 0, 0.15)',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          overflow: 'hidden',
           position: 'relative',
-          overflow: 'hidden'
+          zIndex: 10
         }}
       >
-        {/* Destellos sutiles de fondo ámbar */}
+        {/* =======================================================================
+            LADO IZQUIERDO: CÁPSULA CURVA SÓLIDA NARANJA CON LOGO OFICIAL
+            ======================================================================= */}
         <div
           style={{
-            position: 'absolute',
-            top: '-120px',
-            right: '-120px',
-            width: '400px',
-            height: '400px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,137,1,0.18) 0%, rgba(255,137,1,0) 70%)',
-            pointerEvents: 'none'
+            flex: '1.05',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '48px 40px',
+            textAlign: 'center',
+            color: '#ffffff',
+            borderTopLeftRadius: '28px',
+            borderBottomLeftRadius: '28px',
+            borderTopRightRadius: '140px',
+            borderBottomRightRadius: '140px',
+            overflow: 'hidden',
+            backgroundColor: '#ff8901',
+            backgroundImage: 'linear-gradient(145deg, #ff941a 0%, #ff8901 60%, #e07200 100%)',
+            boxShadow: 'inset -15px 0 30px rgba(0,0,0,0.08), 8px 0 25px rgba(255,137,1,0.25)'
           }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            bottom: '-100px',
-            left: '-80px',
-            width: '350px',
-            height: '350px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,122,0,0.12) 0%, rgba(255,122,0,0) 70%)',
-            pointerEvents: 'none'
-          }}
-        />
-
-        {/* Cabecera de Marca */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.06)', padding: '6px 14px', borderRadius: '30px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '28px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ff8901', display: 'inline-block', boxShadow: '0 0 10px #ff8901' }} />
-            <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: '#ffd5a8' }}>
-              Plataforma Comercial Outlet Autocorp
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-            <span
+        >
+          {/* LOGO OFICIAL: OUTLET FARRERA GRAN REMATE */}
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <img
+              src="/logo-outlet-farrera.png"
+              alt="Outlet Farrera Gran Remate"
               style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                backgroundColor: '#ff8901',
-                color: '#251f1d',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 8px 24px rgba(255,137,1,0.35)'
+                width: '100%',
+                maxWidth: '240px',
+                height: 'auto',
+                filter: 'drop-shadow(0 8px 22px rgba(0,0,0,0.32))',
+                objectFit: 'contain'
               }}
-            >
-              <CarIcon size={24} />
-            </span>
-            <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 900, letterSpacing: '0.5px', color: '#ffffff' }}>
-              OUTLET AUTOCORP
-            </h1>
+            />
           </div>
-          <p style={{ margin: 0, fontSize: '14px', color: '#bfb5b0', maxWidth: '460px', lineHeight: 1.6 }}>
-            Gestión integral de piso de venta, inventario certificado multimarca, prospección 360° y asignación de guardias comerciales.
+
+          {/* Título: ¡Hola, Bienvenido! */}
+          <h2
+            style={{
+              fontSize: '34px',
+              fontWeight: 900,
+              margin: '0 0 10px 0',
+              letterSpacing: '-0.3px',
+              lineHeight: 1.15,
+              textShadow: '0 2px 8px rgba(0,0,0,0.18)'
+            }}
+          >
+            ¡Hola, Bienvenido!
+          </h2>
+
+          <p
+            style={{
+              fontSize: '13px',
+              opacity: 0.95,
+              margin: 0,
+              fontWeight: 600,
+              maxWidth: '260px',
+              lineHeight: 1.5,
+              textShadow: '0 1px 4px rgba(0,0,0,0.15)'
+            }}
+          >
+            Sistema Comercial y Plataforma de Gestión de Seminuevos
           </p>
         </div>
 
-        {/* Showcase Central: Tarjeta de Desempeño y Vehículo en exhibición */}
-        <div style={{ position: 'relative', zIndex: 2, margin: '40px 0' }}>
-          <div
+        {/* =======================================================================
+            LADO DERECHO: FORMULARIO "Iniciar Sesión" (EN ESPAÑOL)
+            ======================================================================= */}
+        <div
+          style={{
+            flex: '1.15',
+            padding: '46px 50px 38px 46px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            backgroundColor: '#ffffff'
+          }}
+        >
+          {/* Título en Español: Iniciar Sesión */}
+          <h1
             style={{
-              backgroundColor: 'rgba(255,255,255,0.04)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: '20px',
-              border: '1px solid rgba(255,255,255,0.09)',
-              padding: '24px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.4)'
+              margin: '0 0 28px 0',
+              fontSize: '32px',
+              fontWeight: 900,
+              color: '#251f1d',
+              textAlign: 'center',
+              letterSpacing: '-0.5px'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#ff8901', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                Unidad Destacada en Showroom
-              </span>
-              <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px', background: '#dcfce7', color: '#16a34a' }}>
-                Disponible
-              </span>
+            Iniciar Sesión
+          </h1>
+
+          {errorMsg && (
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: '8px',
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#b91c1c',
+                fontSize: '12px',
+                fontWeight: 600,
+                marginBottom: '16px',
+                textAlign: 'center'
+              }}
+            >
+              {errorMsg}
             </div>
+          )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>
-                  KIA Seltos EX 2021
-                </h3>
-                <span style={{ fontSize: '12px', color: '#a39793' }}>
-                  Automática • 32,000 km • Color Blanco
-                </span>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: '10px', color: '#a39793', display: 'block' }}>Precio de Venta</span>
-                <strong style={{ fontSize: '18px', fontWeight: 900, color: '#ff8901' }}>
-                  $345,000 MXN
-                </strong>
-              </div>
-            </div>
-
-            {/* Mini KPIs de la Sucursal */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '10px 12px' }}>
-                <span style={{ fontSize: '10px', color: '#8e827e', display: 'block' }}>Visitas Hoy</span>
-                <strong style={{ fontSize: '15px', color: '#ffffff' }}>5 Clientes</strong>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '10px 12px' }}>
-                <span style={{ fontSize: '10px', color: '#8e827e', display: 'block' }}>Inventario</span>
-                <strong style={{ fontSize: '15px', color: '#ffffff' }}>4 Disponibles</strong>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '10px', padding: '10px 12px' }}>
-                <span style={{ fontSize: '10px', color: '#8e827e', display: 'block' }}>Conversión</span>
-                <strong style={{ fontSize: '15px', color: '#10b981' }}>20% Global</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Pie de Página del Panel Izquierdo */}
-        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px', fontSize: '11px', color: '#8e827e' }}>
-          <span>© 2026 Outlet Autocorp de México S.A. de C.V.</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#ff8901' }}>🔒</span> Conexión Cifrada SSL 256-bit
-          </span>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          PANEL DERECHO: FORMULARIO DE ACCESO & DEMO EN 1 CLIC (50%)
-          ========================================================================= */}
-      <div
-        style={{
-          flex: 1,
-          backgroundColor: '#faf9f8',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px 32px',
-          overflowY: 'auto'
-        }}
-      >
-        <div style={{ width: '100%', maxWidth: '440px' }}>
-          {/* Tarjeta de Formulario */}
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '20px',
-              padding: '36px 36px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.05)',
-              border: '1px solid #eae7e5'
-            }}
-          >
-            {/* Header del formulario */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#ff8901', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ff8901' }} />
-                <span>Acceso Autorizado</span>
-              </div>
-              <h2 style={{ margin: '0 0 6px 0', fontSize: '24px', fontWeight: 900, color: '#251f1d' }}>
-                Iniciar Sesión
-              </h2>
-              <p style={{ margin: 0, fontSize: '13px', color: '#6e6764' }}>
-                Ingresa tus credenciales comerciales para acceder al CRM.
-              </p>
-            </div>
-
-            {/* Mensaje de error si aplica */}
-            {errorMsg && (
-              <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fee2e2', border: '1px solid #fca5a5', color: '#b91c1c', fontSize: '12px', fontWeight: 600, marginBottom: '18px' }}>
-                {errorMsg}
-              </div>
-            )}
-
-            {/* Formulario */}
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Campo Correo */}
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#251f1d', marginBottom: '6px' }}>
-                  Correo electrónico
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#8e8784', display: 'flex' }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="20" height="16" x="2" y="4" rx="2"></rect>
-                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
-                    </svg>
-                  </span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="asesor@autocorp.mx"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '11px 14px 11px 40px',
-                      borderRadius: '10px',
-                      border: '1px solid #d5d0ce',
-                      fontSize: '13px',
-                      backgroundColor: '#ffffff',
-                      color: '#251f1d',
-                      outline: 'none',
-                      transition: 'border-color 0.15s, box-shadow 0.15s'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#ff8901';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255,137,1,0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d5d0ce';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Campo Contraseña */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d' }}>
-                    Contraseña
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    style={{ background: 'none', border: 'none', padding: 0, fontSize: '11px', color: '#ff8901', fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#8e8784', display: 'flex' }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                  </span>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••••••"
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '11px 40px 11px 40px',
-                      borderRadius: '10px',
-                      border: '1px solid #d5d0ce',
-                      fontSize: '13px',
-                      backgroundColor: '#ffffff',
-                      color: '#251f1d',
-                      outline: 'none',
-                      transition: 'border-color 0.15s, box-shadow 0.15s'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#ff8901';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(255,137,1,0.15)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d5d0ce';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#8e8784', display: 'flex' }}
-                  >
-                    {showPassword ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path>
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path>
-                        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path>
-                        <line x1="2" x2="22" y1="2" y2="22"></line>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Recordar sesión */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '2px 0 6px 0' }}>
-                <input
-                  type="checkbox"
-                  id="remember"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ accentColor: '#ff8901', cursor: 'pointer', width: '15px', height: '15px' }}
-                />
-                <label htmlFor="remember" style={{ fontSize: '12px', color: '#554f4d', cursor: 'pointer', fontWeight: 600 }}>
-                  Mantener sesión iniciada en este equipo
-                </label>
-              </div>
-
-              {/* Botón de Iniciar Sesión */}
-              <button
-                type="submit"
-                disabled={loading}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Input Usuario o Correo con icono a la derecha */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Usuario o correo"
+                required
                 style={{
                   width: '100%',
-                  backgroundColor: '#ff8901',
-                  color: '#251f1d',
+                  padding: '14px 44px 14px 18px',
+                  borderRadius: '12px',
                   border: 'none',
-                  padding: '12px 18px',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontWeight: 900,
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  backgroundColor: '#edeef2',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#251f1d',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'background 0.2s'
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#475569',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(255,137,1,0.3)',
-                  transition: 'background-color 0.15s, transform 0.1s'
-                }}
-                onMouseEnter={(e) => {
-                  if (!loading) e.currentTarget.style.backgroundColor = '#e57b01';
-                }}
-                onMouseLeave={(e) => {
-                  if (!loading) e.currentTarget.style.backgroundColor = '#ff8901';
+                  pointerEvents: 'none'
                 }}
               >
-                {loading ? (
-                  <span>Verificando credenciales...</span>
-                ) : (
-                  <>
-                    <span>Ingresar a la Plataforma</span>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M5 12h14"></path>
-                      <path d="m12 5 7 7-7 7"></path>
-                    </svg>
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Divisor */}
-            <div style={{ position: 'relative', margin: '26px 0 20px 0', textAlign: 'center' }}>
-              <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: '1px', background: '#eae7e5' }} />
-              <span style={{ position: 'relative', background: '#ffffff', padding: '0 12px', fontSize: '11px', fontWeight: 700, color: '#8e8784', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                O ingresa en 1 clic como
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+                </svg>
               </span>
             </div>
 
-            {/* Accesos Rápidos de Demostración */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {DEMO_USERS.map((u) => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(u)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid #eae7e5',
-                    background: '#fcfbfa',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#fff5eb';
-                    e.currentTarget.style.borderColor = '#ffd8b3';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#fcfbfa';
-                    e.currentTarget.style.borderColor = '#eae7e5';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '50%',
-                        backgroundColor: u.color,
-                        color: '#ffffff',
-                        fontSize: '11px',
-                        fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
-                      {u.avatar}
-                    </span>
-                    <div>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
-                        {u.name}
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#8e8784' }}>
-                        {u.role}
-                      </div>
-                    </div>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#ff8901' }}>
-                    Entrar →
-                  </span>
-                </button>
-              ))}
+            {/* Input Contraseña con icono de candado a la derecha */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Contraseña"
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 44px 14px 18px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  backgroundColor: '#edeef2',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#251f1d',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'background 0.2s'
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#475569',
+                  display: 'flex',
+                  alignItems: 'center',
+                  pointerEvents: 'none'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+              </span>
+            </div>
+
+            {/* ¿Olvidaste tu contraseña? */}
+            <div style={{ textAlign: 'center', margin: '2px 0 6px 0' }}>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#64748b',
+                  cursor: 'pointer'
+                }}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+
+            {/* Botón Iniciar Sesión Naranja Sólido */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                backgroundColor: '#ff8901',
+                color: '#251f1d',
+                border: 'none',
+                padding: '13px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 900,
+                letterSpacing: '0.4px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: '0 8px 22px rgba(255, 137, 1, 0.4)',
+                marginTop: '2px',
+                transition: 'all 0.2s'
+              }}
+            >
+              {loading ? 'Accediendo...' : 'Iniciar Sesión'}
+            </button>
+          </form>
+
+          {/* Fila de asesores demo en 1 clic */}
+          <div style={{ marginTop: '26px', textAlign: 'center' }}>
+            <span
+              style={{
+                display: 'block',
+                fontSize: '11px',
+                color: '#64748b',
+                fontWeight: 600,
+                marginBottom: '12px'
+              }}
+            >
+              o ingresa como asesor demo:
+            </span>
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+              {DEMO_USERS.slice(0, 4).map((u) => {
+                const initials = u.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
+                const isSelected = selectedAdvisorId === u.id;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    title={`Acceder como ${u.name} (${u.role})`}
+                    onClick={() => handleQuickAdvisorLogin(u)}
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '10px',
+                      border: isSelected ? '2px solid #ff8901' : '1.2px solid #cbd5e1',
+                      backgroundColor: isSelected ? '#fff8f0' : '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      color: isSelected ? '#ff8901' : '#334155',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {initials}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          MODAL: RECUPERACIÓN DE CONTRASEÑA
+          MODAL RECUPERAR CONTRASEÑA
           ========================================================================= */}
       {showForgotModal && (
-        <div className="modal-backdrop" onClick={() => setShowForgotModal(false)} style={{ zIndex: 9999 }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999999,
+            padding: '20px'
+          }}
+        >
           <div
-            className="modal-box animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
             style={{
               backgroundColor: '#ffffff',
               borderRadius: '16px',
-              maxWidth: '440px',
+              padding: '26px',
+              maxWidth: '400px',
               width: '100%',
-              padding: '24px 28px',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
-              border: '1px solid #eae7e5'
+              boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #f0edeb', paddingBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#251f1d' }}>
-                Recuperación de Contraseña
-              </h3>
-              <button onClick={() => setShowForgotModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, display: 'flex' }}>
-                <CloseIcon size={18} />
-              </button>
-            </div>
-            <p style={{ fontSize: '13px', color: '#6e6764', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-              Para restablecer tus credenciales corporativas de Outlet Autocorp, contacta al administrador de sistemas o escribe a:
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: 800, color: '#251f1d' }}>
+              Recuperar Contraseña
+            </h3>
+            <p style={{ fontSize: '13px', color: '#6e6764', margin: '0 0 18px 0', lineHeight: 1.5 }}>
+              Para restablecer tu contraseña comunícate con la administración de sistemas de Outlet Farrera.
             </p>
-            <div style={{ background: '#f8f7f6', padding: '12px', borderRadius: '8px', border: '1px solid #eae7e5', marginBottom: '18px' }}>
-              <strong style={{ fontSize: '13px', color: '#251f1d', display: 'block' }}>Soporte de TI Outlet Autocorp:</strong>
-              <span style={{ fontSize: '12px', color: '#ff8901', fontWeight: 700 }}>soporte.it@autocorp.mx</span>
-              <div style={{ fontSize: '11px', color: '#8e8784', marginTop: '4px' }}>Extensión interna: 402 / 405 (Horario: 09:00 - 18:00)</div>
+            <div style={{ padding: '12px', background: '#faf9f8', borderRadius: '8px', fontSize: '12px', color: '#251f1d', marginBottom: '18px' }}>
+              <strong>Contraseña demo:</strong> <code>autocorp2026</code>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowForgotModal(false)}
-                style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: '#ff8901', color: '#251f1d', fontWeight: 800, cursor: 'pointer', fontSize: '13px' }}
-              >
-                Entendido
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              style={{
+                width: '100%',
+                backgroundColor: '#ff8901',
+                color: '#251f1d',
+                border: 'none',
+                padding: '10px',
+                borderRadius: '8px',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Entendido
+            </button>
           </div>
         </div>
       )}
