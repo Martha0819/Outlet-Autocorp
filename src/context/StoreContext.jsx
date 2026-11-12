@@ -7,6 +7,64 @@ import { getTodayISO, generateId } from '@/lib/utils';
 const STORAGE_KEY = 'outlet_autocorp_data_v6';
 const THEME_KEY = 'outlet_autocorp_vip_theme';
 const DESIGN_KEY = 'outlet_autocorp_active_design';
+const USER_KEY = 'outlet_autocorp_current_user';
+
+export const DEMO_USERS = [
+  {
+    id: 'usr-1',
+    name: 'Carlos Morales',
+    email: 'carlos.morales@autocorp.mx',
+    role: 'Asesor Comercial Senior',
+    department: 'Ventas Showroom',
+    avatar: 'CM',
+    color: '#ff8901'
+  },
+  {
+    id: 'usr-2',
+    name: 'Sofía Reyes',
+    email: 'sofia.reyes@autocorp.mx',
+    role: 'Coordinadora de Recepción & CRM',
+    department: 'Recepción y Atención',
+    avatar: 'SR',
+    color: '#ec4899'
+  },
+  {
+    id: 'usr-3',
+    name: 'Alejandro Peña',
+    email: 'alejandro.pena@autocorp.mx',
+    role: 'Asesor de Ventas y Patio',
+    department: 'Exhibición y Supervisión',
+    avatar: 'AP',
+    color: '#0284c7'
+  },
+  {
+    id: 'usr-4',
+    name: 'Mariana Garza',
+    email: 'mariana.garza@autocorp.mx',
+    role: 'Especialista en Crédito & F&I',
+    department: 'Finanzas y Trámites',
+    avatar: 'MG',
+    color: '#10b981'
+  },
+  {
+    id: 'usr-5',
+    name: 'Roberto Méndez',
+    email: 'roberto.mendez@autocorp.mx',
+    role: 'Supervisor de Operaciones',
+    department: 'Inventario y Entregas',
+    avatar: 'RM',
+    color: '#8b5cf6'
+  },
+  {
+    id: 'usr-0',
+    name: 'Administración General',
+    email: 'admin@autocorp.mx',
+    role: 'Gerencia General',
+    department: 'Dirección Comercial',
+    avatar: 'AD',
+    color: '#251f1d'
+  }
+];
 
 const StoreContext = createContext(null);
 
@@ -14,6 +72,7 @@ export function StoreProvider({ children }) {
   const [data, setData] = useState(null);
   const [activeDesign, setActiveDesign] = useState('diseno1');
   const [theme, setTheme] = useState('dark');
+  const [currentUser, setCurrentUser] = useState(DEMO_USERS[0]);
   const [toasts, setToasts] = useState([]);
   const [isClient, setIsClient] = useState(false);
 
@@ -42,6 +101,14 @@ export function StoreProvider({ children }) {
 
       const savedDesign = localStorage.getItem(DESIGN_KEY) || 'diseno1';
       setActiveDesign(savedDesign);
+
+      const savedUser = localStorage.getItem(USER_KEY);
+      if (savedUser) {
+        try {
+          const parsedUser = JSON.parse(savedUser);
+          if (parsedUser) setCurrentUser(parsedUser);
+        } catch (_) {}
+      }
     } catch (err) {
       console.error('Error cargando StoreContext:', err);
       const fallback = getInitialSeedData();
@@ -292,6 +359,35 @@ export function StoreProvider({ children }) {
     notify('Nueva visita registrada en la ficha del cliente.');
   };
 
+  const login = (email, password = '') => {
+    const userFound = DEMO_USERS.find(
+      (u) => u.email.toLowerCase() === (email || '').trim().toLowerCase()
+    ) || {
+      id: generateId('usr'),
+      name: (email || 'Usuario').split('@')[0].replace('.', ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+      email: (email || 'asesor@autocorp.mx').trim(),
+      role: 'Asesor Comercial',
+      department: 'Piso de Ventas',
+      avatar: (email || 'US').substring(0, 2).toUpperCase(),
+      color: '#ff8901'
+    };
+
+    setCurrentUser(userFound);
+    if (isClient) {
+      localStorage.setItem(USER_KEY, JSON.stringify(userFound));
+    }
+    notify(`¡Bienvenido de vuelta, ${userFound.name}!`);
+    return userFound;
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    if (isClient) {
+      localStorage.removeItem(USER_KEY);
+    }
+    notify('Has cerrado sesión correctamente.');
+  };
+
   const resetToDefaults = () => {
     const defaults = getInitialSeedData();
     setData(defaults);
@@ -305,6 +401,10 @@ export function StoreProvider({ children }) {
     data: data || getInitialSeedData(),
     activeDesign,
     theme,
+    currentUser,
+    DEMO_USERS,
+    login,
+    logout,
     toasts,
     changeDesign,
     toggleTheme,

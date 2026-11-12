@@ -1,7 +1,6 @@
 import './globals.css';
 import { StoreProvider } from '@/context/StoreContext';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { AppHeader } from '@/components/layout/AppHeader';
+import { AppLayoutWrapper } from '@/components/layout/AppLayoutWrapper';
 import { ToastContainer } from '@/components/ui/Toast';
 
 export const metadata = {
@@ -22,15 +21,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <StoreProvider>
-          <div className="app-layout">
-            <Sidebar />
-            <div className="app-main-wrapper">
-              <AppHeader />
-              <main className="app-content-area">
-                {children}
-              </main>
-            </div>
-          </div>
+          <AppLayoutWrapper>{children}</AppLayoutWrapper>
           <ToastContainer />
         </StoreProvider>
       </body>

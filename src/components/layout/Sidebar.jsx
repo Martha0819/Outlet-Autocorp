@@ -13,7 +13,7 @@ import {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { resetToDefaults } = useStore();
+  const { resetToDefaults, currentUser } = useStore();
 
   const navItems = [
     { label: 'General', href: '/', icon: <DashboardIcon size={18} /> },
@@ -51,6 +51,48 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
+        {currentUser && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', marginBottom: '10px' }}>
+            <span
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                backgroundColor: currentUser.color || '#ff8901',
+                color: '#ffffff',
+                fontSize: '11px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              {currentUser.avatar || 'US'}
+            </span>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: '#ffffff', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                {currentUser.name}
+              </div>
+              <div style={{ fontSize: '9px', color: '#ff8901', textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden', fontWeight: 600 }}>
+                {currentUser.role}
+              </div>
+            </div>
+            <Link
+              href="/login"
+              title="Cambiar usuario"
+              style={{ color: '#8e8784', display: 'flex', textDecoration: 'none' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+            </Link>
+          </div>
+        )}
+
         <div className="demo-mode-indicator">
           <span className="demo-dot"></span>
           <span className="demo-text">Datos de demostración</span>
