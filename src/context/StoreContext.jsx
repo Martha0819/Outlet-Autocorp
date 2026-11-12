@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getInitialSeedData } from '@/lib/seedData';
 import { getTodayISO, generateId } from '@/lib/utils';
 
-const STORAGE_KEY = 'outlet_autocorp_data_v1';
+const STORAGE_KEY = 'outlet_autocorp_data_v6';
 const THEME_KEY = 'outlet_autocorp_vip_theme';
 const DESIGN_KEY = 'outlet_autocorp_active_design';
 
@@ -12,7 +12,7 @@ const StoreContext = createContext(null);
 
 export function StoreProvider({ children }) {
   const [data, setData] = useState(null);
-  const [activeDesign, setActiveDesign] = useState('diseno2');
+  const [activeDesign, setActiveDesign] = useState('diseno1');
   const [theme, setTheme] = useState('dark');
   const [toasts, setToasts] = useState([]);
   const [isClient, setIsClient] = useState(false);
@@ -40,7 +40,7 @@ export function StoreProvider({ children }) {
       const savedTheme = localStorage.getItem(THEME_KEY) || 'dark';
       setTheme(savedTheme);
 
-      const savedDesign = localStorage.getItem(DESIGN_KEY) || 'diseno2';
+      const savedDesign = localStorage.getItem(DESIGN_KEY) || 'diseno1';
       setActiveDesign(savedDesign);
     } catch (err) {
       console.error('Error cargando StoreContext:', err);
@@ -182,6 +182,32 @@ export function StoreProvider({ children }) {
     notify(`¡Venta cerrada! ${veh.brand} ${veh.model} marcado como Vendido.`);
   };
 
+  const updateClient = (clientId, updates) => {
+    setData((prev) => ({
+      ...prev,
+      clients: prev.clients.map((c) =>
+        c.id === clientId ? { ...c, ...updates } : c
+      )
+    }));
+    notify('Datos del cliente actualizados con éxito.');
+  };
+
+  const linkVehicleToClient = (clientId, vehicleId) => {
+    setData((prev) => ({
+      ...prev,
+      clients: prev.clients.map((c) => {
+        if (c.id === clientId) {
+          const current = c.interestedVehicleIds || [];
+          if (!current.includes(vehicleId)) {
+            return { ...c, interestedVehicleIds: [...current, vehicleId] };
+          }
+        }
+        return c;
+      })
+    }));
+    notify('Vehículo vinculado con éxito al expediente.');
+  };
+
   const addShift = (shift) => {
     const newShift = {
       id: generateId('sh'),
@@ -285,6 +311,8 @@ export function StoreProvider({ children }) {
     notify,
     removeToast,
     addClient,
+    updateClient,
+    linkVehicleToClient,
     addVehicle,
     reserveVehicle,
     sellVehicle,

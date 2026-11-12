@@ -1,11 +1,12 @@
 import './globals.css';
 import { StoreProvider } from '@/context/StoreContext';
-import { Header } from '@/components/layout/Header';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { AppHeader } from '@/components/layout/AppHeader';
 import { ToastContainer } from '@/components/ui/Toast';
 
 export const metadata = {
   title: 'Outlet Autocorp — Mini CRM para Outlet de Autos',
-  description: 'Sistema integral de gestión comercial, inventario, guardias y clientes para outlet de autos en México.'
+  description: 'Sistema integral de gestión comercial, inventario, guardias y clientes para outlet de autos.'
 };
 
 export default function RootLayout({ children }) {
@@ -21,13 +22,16 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <StoreProvider>
-          <div className="app-wrapper">
-            <Header />
-            <main className="main-content-layout">
-              {children}
-            </main>
-            <ToastContainer />
+          <div className="app-layout">
+            <Sidebar />
+            <div className="app-main-wrapper">
+              <AppHeader />
+              <main className="app-content-area">
+                {children}
+              </main>
+            </div>
           </div>
+          <ToastContainer />
         </StoreProvider>
       </body>
     </html>
