@@ -32,16 +32,16 @@ separación de `condicion` (NUEVO/SEMINUEVO) de `estatus` (disponibilidad).
 - [x] `prisma`/`@prisma/client` instalados en `package.json`.
 - [x] `.env.example` con `DATABASE_URL` placeholder documentado.
 - [x] Regla de negocio `dioEnganche`/`enganche` (no expresable como constraint nativo de Prisma) documentada y validada en capa de aplicación (`src/lib/validations/negocio.js`).
-- [ ] Migración inicial aplicada contra una base de datos real — pendiente de que el usuario provisione `DATABASE_URL` (Postgres); no se puede probar en este entorno.
-- [ ] CHECK constraints de Postgres para la regla de enganche añadidos a la migración SQL una vez que exista conexión real — pendiente.
+- [x] Migración inicial aplicada contra una base de datos real — `npx prisma migrate dev --name init` corrió contra Postgres local (`outlet_db`, rol `outlet_user` con `CREATEDB` para la shadow database); las 18 tablas quedaron creadas (verificado con `\dt`).
+- [ ] CHECK constraints de Postgres para la regla de enganche añadidos a la migración SQL — pendiente.
 
 ## Evidence
 
 - `npx prisma validate` → esquema válido (ver salida de la sesión).
 - Revisión de `src/lib/seedData.js` y componentes (`ClientesView`, `GuardiasView`, `InventarioView`) confirmó que el prototipo actual no tiene las entidades `unidad_negocio`/`linea_negocio`; el usuario confirmó que el esquema nuevo representa un negocio distinto (evento multi-dealer), no una migración 1:1 del prototipo.
+- `npx prisma migrate dev --name init` aplicado contra Postgres local del usuario (Fedora, servicio `postgresql.service`, rol `outlet_user`, BD `outlet_db`) → migración `20261113221030_init` creada y aplicada; `\dt` confirma las 18 tablas.
 
 ## Next
 
-- Usuario debe proveer `DATABASE_URL` de un Postgres real para correr `npx prisma migrate dev --name init` y generar la migración SQL versionada.
-- Tras esa primera migración, añadir manualmente el `CHECK` constraint de la regla de enganche en una migración adicional.
+- Añadir manualmente el `CHECK` constraint de la regla de enganche en una migración adicional (`npx prisma migrate dev --create-only` + editar el SQL generado).
 - Decidir si/cuándo se conectan los componentes de UI actuales (`InventarioView`, `ClientesView`, `GuardiasView`) a este esquema vía Server Actions, sustituyendo `StoreContext`/`seedData.js`.
