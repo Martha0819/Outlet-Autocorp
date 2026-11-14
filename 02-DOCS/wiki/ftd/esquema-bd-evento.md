@@ -1,5 +1,5 @@
 ---
-author: kurtganola89@gmail.com
+author: equipo
 branch: main
 status: in-progress
 ---
