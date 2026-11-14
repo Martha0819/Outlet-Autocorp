@@ -33,6 +33,12 @@ next-env.d.ts
 
 # rsc local state (hooks, seals, logs) and managed skill links — machine-local
 .rsc/
+.rsc.json
+AGENTS.md
+01-TOOLS/
+.claude/
+.codex/
+.gemini/
 .worktrees/
 .claude/skills/analyze
 .claude/skills/asdd
