@@ -1,7 +1,5 @@
 import React from 'react';
 
-// Exact SVG Icons from public/js/components/icons.js (Templates oficiales de Outlet Autocorp)
-
 export function DashboardIcon({ size = 18, className = '' }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -174,6 +172,37 @@ export function GridIcon({ size = 18, className = '' }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
       <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ size = 18, className = '' }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m6 9 6 6 6-6"/>
+    </svg>
+  );
+}
+
+export function LayersIcon({ size = 18, className = '' }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.84l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/>
+      <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+      <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+    </svg>
+  );
+}
+
+export function UserCogIcon({ size = 18, className = '' }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <circle cx="18" cy="15" r="3"/><circle cx="9" cy="7" r="4"/>
+      <path d="M10 15H6a4 4 0 0 0-4 4v2"/>
+      <path d="m21.7 16.4-.9-.3"/><path d="m15.2 13.9-.9-.3"/>
+      <path d="m16.6 18.7.3-.9"/><path d="m19.1 12.2.3-.9"/>
+      <path d="m19.6 18.7-.4-1"/><path d="m16.8 12.3-.4-1"/>
+      <path d="m14.3 16.6 1-.4"/><path d="m20.7 13.8 1-.4"/>
     </svg>
   );
 }

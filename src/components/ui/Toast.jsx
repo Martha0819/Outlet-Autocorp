@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
-import { useStore } from '@/context/StoreContext';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { removeToast } from '@/store/features/ui/toastSlice';
 import { CloseIcon, CheckIcon } from './Icons';
 
 export function ToastContainer() {
-  const { toasts, removeToast } = useStore();
+  const toasts = useAppSelector((state) => state.toasts.items);
+  const dispatch = useAppDispatch();
 
   if (!toasts || toasts.length === 0) return null;
 
@@ -35,7 +37,7 @@ export function ToastContainer() {
             <span style={{ fontSize: 13, fontWeight: 600 }}>{t.message}</span>
           </div>
           <button
-            onClick={() => removeToast(t.id)}
+            onClick={() => dispatch(removeToast(t.id))}
             style={{ background: 'none', border: 'none', color: '#ffffff', opacity: 0.7, cursor: 'pointer', padding: 4 }}
           >
             <CloseIcon size={14} />

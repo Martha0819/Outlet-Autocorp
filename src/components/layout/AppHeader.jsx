@@ -2,15 +2,16 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useStore } from '@/context/StoreContext';
-import { formatDate, getTodayISO } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
+import { useAppSelector } from '@/store/hooks';
+import { useLogout } from '@/store/features/auth/useLogout';
+import { formatDate, getInitials, getTodayISO } from '@/lib/utils';
 import { CalendarIcon } from '@/components/ui/Icons';
 
 export function AppHeader() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { currentUser, logout } = useStore();
+  const usuario = useAppSelector((state) => state.auth.usuario);
+  const { logout: handleLogout } = useLogout();
 
   const getPageTitle = (path) => {
     switch (path) {
@@ -18,13 +19,10 @@ export function AppHeader() {
       case '/guardias': return 'Guardias y Actividades';
       case '/clientes': return 'Directorio de Clientes';
       case '/inventario': return 'Inventario de Vehículos Seminuevos';
+      case '/catalogos': return 'Catálogos del Sistema';
+      case '/usuarios': return 'Gestión de Usuarios y Permisos';
       default: return 'Outlet Autocorp';
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
   };
 
   return (
@@ -43,14 +41,14 @@ export function AppHeader() {
         </div>
 
         {/* Perfil del Asesor / Usuario activo */}
-        {currentUser ? (
+        {usuario ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', borderLeft: '1px solid #eae7e5' }}>
             <span
               style={{
                 width: '34px',
                 height: '34px',
                 borderRadius: '50%',
-                backgroundColor: currentUser.color || '#ff8901',
+                backgroundColor: '#ff8901',
                 color: '#ffffff',
                 fontWeight: 800,
                 fontSize: '12px',
@@ -61,14 +59,14 @@ export function AppHeader() {
                 boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
               }}
             >
-              {currentUser.avatar || 'US'}
+              {getInitials(usuario.nombre)}
             </span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
-                {currentUser.name}
+                {usuario.nombre}
               </span>
               <span style={{ fontSize: '10px', color: '#8e8784', fontWeight: 600 }}>
-                {currentUser.role}
+                {usuario.tipoUsuarioNombre}
               </span>
             </div>
 

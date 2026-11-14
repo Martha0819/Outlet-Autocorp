@@ -1,22 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useStore } from '@/context/StoreContext';
+import { useLogin } from '@/store/features/auth/useLogin';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { login, DEMO_USERS } = useStore();
+  const { login, isLoading } = useLogin();
 
   // Estados del formulario
-  const [email, setEmail] = useState('carlos.morales@autocorp.mx');
-  const [password, setPassword] = useState('autocorp2026');
-  const [selectedAdvisorId, setSelectedAdvisorId] = useState('usr-1');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [showForgotModal, setShowForgotModal] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -29,21 +25,10 @@ export default function LoginPage() {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      login(email.trim(), password);
-      router.push('/');
-    }, 350);
-  };
-
-  const handleQuickAdvisorLogin = (advisor) => {
-    setEmail(advisor.email);
-    setSelectedAdvisorId(advisor.id);
-    setLoading(true);
-    setTimeout(() => {
-      login(advisor.email, 'autocorp2026');
-      router.push('/');
-    }, 300);
+    const result = await login({ email: email.trim(), password });
+    if (!result.ok) {
+      setErrorMsg(result.message);
+    }
   };
 
   // Fondo fotográfico automotriz de alta resolución en carretera
@@ -312,7 +297,7 @@ export default function LoginPage() {
             {/* Botón Iniciar Sesión Naranja Sólido */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               style={{
                 width: '100%',
                 backgroundColor: '#ff8901',
@@ -323,63 +308,15 @@ export default function LoginPage() {
                 fontSize: '14px',
                 fontWeight: 900,
                 letterSpacing: '0.4px',
-                cursor: loading ? 'not-allowed' : 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 boxShadow: '0 8px 22px rgba(255, 137, 1, 0.4)',
                 marginTop: '2px',
                 transition: 'all 0.2s'
               }}
             >
-              {loading ? 'Accediendo...' : 'Iniciar Sesión'}
+              {isLoading ? 'Accediendo...' : 'Iniciar Sesión'}
             </button>
           </form>
-
-          {/* Fila de asesores demo en 1 clic */}
-          <div style={{ marginTop: '26px', textAlign: 'center' }}>
-            <span
-              style={{
-                display: 'block',
-                fontSize: '11px',
-                color: '#64748b',
-                fontWeight: 600,
-                marginBottom: '12px'
-              }}
-            >
-              o ingresa como asesor demo:
-            </span>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-              {DEMO_USERS.slice(0, 4).map((u) => {
-                const initials = u.name.split(' ').map((n) => n[0]).join('').slice(0, 2);
-                const isSelected = selectedAdvisorId === u.id;
-                return (
-                  <button
-                    key={u.id}
-                    type="button"
-                    title={`Acceder como ${u.name} (${u.role})`}
-                    onClick={() => handleQuickAdvisorLogin(u)}
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      borderRadius: '10px',
-                      border: isSelected ? '2px solid #ff8901' : '1.2px solid #cbd5e1',
-                      backgroundColor: isSelected ? '#fff8f0' : '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      color: isSelected ? '#ff8901' : '#334155',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {initials}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -416,9 +353,6 @@ export default function LoginPage() {
             <p style={{ fontSize: '13px', color: '#6e6764', margin: '0 0 18px 0', lineHeight: 1.5 }}>
               Para restablecer tu contraseña comunícate con la administración de sistemas de Outlet Farrera.
             </p>
-            <div style={{ padding: '12px', background: '#faf9f8', borderRadius: '8px', fontSize: '12px', color: '#251f1d', marginBottom: '18px' }}>
-              <strong>Contraseña demo:</strong> <code>autocorp2026</code>
-            </div>
             <button
               type="button"
               onClick={() => setShowForgotModal(false)}

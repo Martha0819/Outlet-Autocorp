@@ -2,6 +2,17 @@
  * @fileoverview Utilidades de formato, fechas y validaciones para Outlet Autocorp CRM
  */
 
+export function getInitials(fullName) {
+  if (!fullName) return 'US';
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export function formatCurrency(amount, withCode = true) {
   if (amount === undefined || amount === null || isNaN(amount)) return '$0';
   const formatted = new Intl.NumberFormat('es-MX', {

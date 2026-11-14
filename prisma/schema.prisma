@@ -1,0 +1,332 @@
+// Esquema de base de datos — Evento Outlet Autocorp (multi-dealer, un solo evento)
+// Convenciones: modelos en PascalCase singular; tablas mapeadas a snake_case singular.
+// Reglas de negocio que Postgres no expresa como constraint (documentadas aquí,
+// validadas en la capa de aplicación — ver src/lib/validations/negocio.js):
+//   - Negocio.dioEnganche = true  => Negocio.enganche > 0
+//   - Negocio.dioEnganche = false => Negocio.enganche IS NULL
+//   - Al pasar Negocio.etapa a "Venta", Vehiculo.estatus debe pasar a VENDIDO
+//     (y a APARTADO si la etapa es "Apartado"); se resuelve en la Server Action
+//     que actualiza la etapa, no con un trigger de BD.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Catálogos ──────────────────────────────────────────────────────────────
+
+model Marca {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activo Boolean @default(true)
+
+  unidadesNegocio UnidadNegocio[]
+  vehiculos       Vehiculo[]
+  clientes        Cliente[]
+
+  @@map("marca")
+}
+
+model LineaNegocio {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activo Boolean @default(true)
+
+  negocios Negocio[]
+
+  @@map("linea_negocio")
+}
+
+model UnidadNegocio {
+  id      Int     @id @default(autoincrement())
+  nombre  String
+  marcaId Int     @map("marca_id")
+  activo  Boolean @default(true)
+
+  marca      Marca       @relation(fields: [marcaId], references: [id])
+  usuarios   Usuario[]
+  vehiculos  Vehiculo[]
+  actividades Actividad[]
+  negocios   Negocio[]
+  clientes   Cliente[]
+
+  @@map("unidad_negocio")
+}
+
+model Dependencia {
+  id                  Int     @id @default(autoincrement())
+  nombre              String
+  dependenciaPadreId  Int?    @map("dependencia_padre_id")
+  activo              Boolean @default(true)
+
+  dependenciaPadre Dependencia?  @relation("DependenciaJerarquia", fields: [dependenciaPadreId], references: [id])
+  dependenciasHijas Dependencia[] @relation("DependenciaJerarquia")
+
+  @@map("dependencia")
+}
+
+model TipoUsuario {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  activo Boolean @default(true)
+
+  usuarios Usuario[]
+  permisos TipoUsuarioPermiso[]
+
+  @@map("tipo_usuario")
+}
+
+model Permiso {
+  id      Int    @id @default(autoincrement())
+  nombre  String
+  // Permiso = acción posible sobre un recurso del sistema (ej. recurso
+  // "vehiculo", accion "crear"). La matriz recurso×accion se siembra una
+  // vez (ver seed de permisos); no se crea libremente desde la UI.
+  recurso String
+  accion  String
+
+  tiposUsuario TipoUsuarioPermiso[]
+
+  @@unique([recurso, accion])
+
+  @@map("permiso")
+}
+
+model TipoUsuarioPermiso {
+  tipoUsuarioId Int @map("tipo_usuario_id")
+  permisoId     Int @map("permiso_id")
+
+  tipoUsuario TipoUsuario @relation(fields: [tipoUsuarioId], references: [id])
+  permiso     Permiso     @relation(fields: [permisoId], references: [id])
+
+  @@id([tipoUsuarioId, permisoId])
+  @@map("tipo_usuario_permiso")
+}
+
+model Turno {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  guardias Guardia[]
+
+  @@map("turno")
+}
+
+model Etapa {
+  id     Int     @id @default(autoincrement())
+  nombre String  @unique
+  orden  Int
+  activo Boolean @default(true)
+
+  negocios Negocio[]
+
+  @@map("etapa")
+}
+
+model TipoSeguimiento {
+  id     Int    @id @default(autoincrement())
+  nombre String @unique
+
+  negocios Negocio[]
+
+  @@map("tipo_seguimiento")
+}
+
+// ─── Usuarios y guardias ────────────────────────────────────────────────────
+
+model Usuario {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  // Se incrementa en cada logout; un access/refresh token firmado con una
+  // tokenVersion vieja se rechaza en verifyToken() aunque no haya expirado.
+  tokenVersion    Int      @default(0) @map("token_version")
+  unidadNegocioId Int      @map("unidad_negocio_id")
+  tipoUsuarioId   Int      @map("tipo_usuario_id")
+  activo          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  unidadNegocio UnidadNegocio @relation(fields: [unidadNegocioId], references: [id])
+  tipoUsuario   TipoUsuario   @relation(fields: [tipoUsuarioId], references: [id])
+  guardias      Guardia[]
+  demos         Demo[]
+  negocios      Negocio[]
+  actividades   Actividad[]
+  bitacora      Bitacora[]
+
+  @@map("usuario")
+}
+
+model Guardia {
+  id             Int       @id @default(autoincrement())
+  usuarioId      Int       @map("usuario_id")
+  fecha          DateTime  @db.Date
+  horarioInicio  DateTime? @map("horario_inicio") @db.Time
+  horarioFin     DateTime? @map("horario_fin") @db.Time
+  turnoId        Int       @map("turno_id")
+  // Texto libre (Recepción, Showroom Principal...), no catálogo: en el
+  // prototipo era una lista fija pero no justifica una tabla aparte.
+  area           String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  turno   Turno   @relation(fields: [turnoId], references: [id])
+
+  @@map("guardia")
+}
+
+enum EstatusActividad {
+  PENDIENTE
+  EN_PROCESO
+  COMPLETADA
+}
+
+model Actividad {
+  id              Int               @id @default(autoincrement())
+  nombre          String
+  fecha           DateTime          @db.Date
+  horario         DateTime          @db.Time
+  unidadNegocioId Int?              @map("unidad_negocio_id")
+  responsableId   Int?              @map("responsable_id")
+  estatus         EstatusActividad  @default(PENDIENTE)
+  observaciones   String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  unidadNegocio UnidadNegocio? @relation(fields: [unidadNegocioId], references: [id])
+  responsable   Usuario?       @relation(fields: [responsableId], references: [id])
+
+  @@map("actividad")
+}
+
+// ─── Inventario ─────────────────────────────────────────────────────────────
+
+enum CondicionVehiculo {
+  NUEVO
+  SEMINUEVO
+}
+
+enum EstatusVehiculo {
+  DISPONIBLE
+  APARTADO
+  VENDIDO
+  NO_DISPONIBLE
+}
+
+model Vehiculo {
+  id              Int               @id @default(autoincrement())
+  nombre          String
+  modelo          String
+  anio            Int
+  km              Int
+  vin             String?           @unique
+  transmision     String
+  condicion       CondicionVehiculo @map("condicion")
+  marcaId         Int               @map("marca_id")
+  unidadNegocioId Int               @map("unidad_negocio_id")
+  estatus         EstatusVehiculo   @default(DISPONIBLE)
+  precio          Decimal?          @db.Decimal(12, 2)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  marca         Marca         @relation(fields: [marcaId], references: [id])
+  unidadNegocio UnidadNegocio @relation(fields: [unidadNegocioId], references: [id])
+  demos         Demo[]
+  negocios      Negocio[]
+
+  @@map("vehiculo")
+}
+
+// ─── Clientes y demos ───────────────────────────────────────────────────────
+
+model Cliente {
+  id                      Int      @id @default(autoincrement())
+  nombre                  String
+  telefono                String
+  correo                  String?
+  visitaMarcaEspecifica   Boolean  @default(false) @map("visita_marca_especifica")
+  marcaId                 Int?     @map("marca_id")
+  // Qué unidad de negocio lo registró. Nullable porque los clientes ya
+  // existentes antes de este campo no tienen de dónde inferirlo; los nuevos
+  // siempre lo traen (se fuerza al unidadNegocioId del usuario que lo crea).
+  unidadNegocioId         Int?     @map("unidad_negocio_id")
+  observaciones           String?
+  fechaRegistro           DateTime @default(now()) @map("fecha_registro")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  marca         Marca?         @relation(fields: [marcaId], references: [id])
+  unidadNegocio UnidadNegocio? @relation(fields: [unidadNegocioId], references: [id])
+  demos         Demo[]
+  negocios      Negocio[]
+
+  @@map("cliente")
+}
+
+model Demo {
+  id            Int      @id @default(autoincrement())
+  clienteId     Int      @map("cliente_id")
+  vehiculoId    Int      @map("vehiculo_id")
+  usuarioId     Int      @map("usuario_id")
+  fecha         DateTime @default(now())
+  observaciones String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  cliente  Cliente  @relation(fields: [clienteId], references: [id])
+  vehiculo Vehiculo @relation(fields: [vehiculoId], references: [id])
+  usuario  Usuario  @relation(fields: [usuarioId], references: [id])
+
+  @@map("demo")
+}
+
+// ─── Comercial ──────────────────────────────────────────────────────────────
+
+model Negocio {
+  id                Int       @id @default(autoincrement())
+  clienteId         Int       @map("cliente_id")
+  usuarioId         Int       @map("usuario_id")
+  unidadNegocioId   Int       @map("unidad_negocio_id")
+  lineaNegocioId    Int       @map("linea_negocio_id")
+  tipoSeguimientoId Int?      @map("tipo_seguimiento_id")
+  etapaId           Int       @map("etapa_id")
+  vehiculoId        Int?      @map("vehiculo_id")
+
+  dioEnganche Boolean  @default(false) @map("dio_enganche")
+  enganche    Decimal? @db.Decimal(12, 2)
+  totalUnidad Decimal? @map("total_unidad") @db.Decimal(12, 2)
+
+  fecha         DateTime @default(now())
+  observaciones String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  cliente         Cliente          @relation(fields: [clienteId], references: [id])
+  usuario         Usuario          @relation(fields: [usuarioId], references: [id])
+  unidadNegocio   UnidadNegocio    @relation(fields: [unidadNegocioId], references: [id])
+  lineaNegocio    LineaNegocio     @relation(fields: [lineaNegocioId], references: [id])
+  tipoSeguimiento TipoSeguimiento? @relation(fields: [tipoSeguimientoId], references: [id])
+  etapa           Etapa            @relation(fields: [etapaId], references: [id])
+  vehiculo        Vehiculo?        @relation(fields: [vehiculoId], references: [id])
+
+  @@map("negocio")
+}
+
+// ─── Auditoría ──────────────────────────────────────────────────────────────
+
+model Bitacora {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int?     @map("usuario_id")
+  accion    String   // 'crear' | 'editar' | 'eliminar' | 'login' | 'logout' | ...
+  recurso   String   // 'usuario' | 'vehiculo' | 'cliente' | 'catalogo:marca' | ...
+  recursoId Int?     @map("recurso_id")
+  detalle   String?  // libre, ej. qué campos cambiaron
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+
+  @@map("bitacora")
+}

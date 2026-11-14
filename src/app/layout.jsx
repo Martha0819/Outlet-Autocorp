@@ -1,5 +1,5 @@
 import './globals.css';
-import { StoreProvider } from '@/context/StoreContext';
+import { ReduxProvider } from '@/store/ReduxProvider';
 import { AppLayoutWrapper } from '@/components/layout/AppLayoutWrapper';
 import { ToastContainer } from '@/components/ui/Toast';
 
@@ -20,10 +20,10 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <StoreProvider>
+        <ReduxProvider>
           <AppLayoutWrapper>{children}</AppLayoutWrapper>
           <ToastContainer />
-        </StoreProvider>
+        </ReduxProvider>
       </body>
     </html>
   );
