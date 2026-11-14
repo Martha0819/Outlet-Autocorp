@@ -71,9 +71,45 @@ eliminado al terminar (`test@outlet.mx`, catálogos mínimos `Marca`,
 
 ## Next
 
-- Conectar el formulario real de `/login` (hoy mock) a `POST /api/auth/login`.
 - Definir qué pasa con el formulario de registro/alta de `Usuario` (hoy no
   existe ningún endpoint para crear usuarios con password).
-- Decidir si se necesita un hook de React (`useAuth`) para estado de UI,
-  además del middleware — el usuario no lo pidió explícitamente al elegir
-  "proteger rutas completas" como único uso de `verify`.
+
+## Actualización — Redux/RTK Query + huecos de UI encontrados y resueltos
+
+Al pedir el usuario validar "¿el verify o el middleware ya cubren todas las
+vistas logueadas?", se encontraron y corrigieron tres huecos reales que el
+middleware por sí solo no resolvía (vivían en la capa de UI):
+
+1. `AppHeader`/`Sidebar` seguían leyendo `currentUser` de `StoreContext`
+   (mock, nunca actualizado por el login real) → ahora leen `auth.usuario`
+   de Redux.
+2. El botón "Salir" llamaba al `logout()` mock, sin revocar la sesión real
+   → ahora usa `useLogout` (`src/store/features/auth/useLogout.js`), que
+   llama `POST /api/auth/logout`.
+3. El estado de Redux no sobrevive un refresh de página (memoria del
+   navegador) aunque la cookie siga viva → `AppLayoutWrapper.jsx` llama
+   `useVerifyQuery` y rehidrata `auth.usuario` cuando `isAuthenticated` es
+   falso.
+
+Se agregó `tipoUsuarioNombre` a las respuestas de `/api/auth/login` y
+`/api/auth/verify` (join con `tipoUsuario`) para mostrar un rol legible en
+vez del ID crudo.
+
+Infraestructura Redux creada en el camino (a petición del usuario, con
+patrones que compartió y se adaptaron a JS + a este dominio):
+`src/store/{store.js,hooks.js,ReduxProvider.jsx,services/apiSlice.js,features/auth/{authSlice,authApiSlice,useLogin,useLogout}.js}`,
+montado en `layout.jsx`. Se descartó a propósito `alertSlice` (duplica el
+`Toast` existente) y `changeUnidad`/`persistUnidadMiddleware` (sin feature
+que lo necesite todavía).
+
+### Evidencia adicional
+
+- Login/verify/logout probados contra el usuario real
+  `coordinador.crm@autocorp.mx` (no un usuario de prueba descartable): el
+  `tipoUsuarioNombre` devuelto es "Administrador", como corresponde.
+- `GET /` sin cookie → 307 a `/login` (gate confirmado).
+- **Limitación de la prueba**: `curl` no ejecuta JS, así que no puede
+  confirmar que el header realmente muestre "Coordinador CRM" tras hidratar
+  — solo que el servidor no bloqueó la página (middleware ya validó la
+  cookie) y que el HTML del shell inicial carga sin usuario (esperado antes
+  de la hidratación). Falta una verificación visual en navegador real.
