@@ -11,3 +11,10 @@ Registro append-only de decisiones de alcance tomadas durante specify/clarify/pl
 - VIN duplicado contra el inventario existente: siempre error, nunca actualiza el vehículo existente (importar es solo alta, no edición masiva).
 - Filas inválidas no bloquean la importación completa: se excluyen individualmente y se reportan en el resumen final.
 - La constitución del proyecto está en `status: draft` (sin ratificar); esta spec no hereda principios formales y lo deja anotado como punto a revisar si la constitución se ratifica antes de `plan`.
+
+## 2026-11-17 — importador-inventario (clarify)
+
+- Formatos de archivo aceptados: CSV y Excel (.xlsx) únicamente, sin límite estricto de filas.
+- La ambigüedad de significado de columnas entre proveedores (p. ej. "modelo" como año-modelo) no necesitó regla nueva: la cubre el mapeo de cabeceras editable que ya estaba en la spec.
+- La referencia visual de la pantalla de revisión/resumen se aprueba como boceto concreto en `plan`, no en la spec.
+- Spec pasa a `status: clarified`.

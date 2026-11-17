@@ -6,12 +6,12 @@ tags: [sdd, spec]
 timestamp: 2026-11-17T00:00:00Z
 topic: sdd
 slug: importador-inventario
-status: draft
+status: clarified
 ---
 
 # Spec — Importador de inventario de vehículos
 
-> Slug: `importador-inventario` · Status: draft · Created: 2026-11-17
+> Slug: `importador-inventario` · Status: clarified · Created: 2026-11-17
 > Inherits: ninguno — el proyecto no tiene constitución ratificada todavía (`02-DOCS/wiki/sdd/constitution.md` está en `status: draft`). Ver *Points to clarify*.
 
 ## Problem & why
@@ -30,6 +30,8 @@ Pedir que quien entrega el archivo lo reformatee a mano con las cabeceras exacta
 - Que una importación con algunas filas problemáticas no bloquee a las filas que sí están correctas.
 
 ## Non-goals / out of scope
+- No acepta formatos de archivo distintos a CSV y Excel (.xlsx) — ningún otro formato de hoja de cálculo ni de documento.
+- No fija un límite estricto de filas por importación; si el volumen real resulta impráctico, se revisa en un ciclo posterior.
 - No crea marcas, unidades de negocio ni ninguna otra entrada de catálogo automáticamente a partir del archivo — ver *What it must respect*.
 - No actualiza ni sobrescribe vehículos ya existentes en el inventario (importar es siempre alta de vehículos nuevos, nunca edición masiva).
 - No programa importaciones recurrentes ni sincronización automática con un proveedor externo; es una carga manual, bajo demanda, iniciada por un usuario.
@@ -64,12 +66,14 @@ Para cada criterio de aceptación de abajo, una comprobación de extremo a extre
 - **Camino principal**: el usuario sube un archivo con vehículos; el sistema lee sus cabeceras y sugiere a qué campo del catálogo corresponde cada una; el usuario confirma o corrige esas correspondencias; el sistema intenta resolver marca y unidad de negocio de cada fila contra el catálogo; las filas totalmente resueltas y válidas quedan listas para importar; el usuario confirma la importación final y los vehículos quedan dados de alta.
 - **Camino de resolución manual**: una fila cuyo valor de marca o unidad de negocio no coincide con ninguna entrada del catálogo se muestra aparte, y el usuario puede asignarle manualmente una entrada existente del catálogo (o descartar esa fila) antes de confirmar la importación.
 - **Caso límite — archivo vacío o sin filas de datos**: el sistema lo indica claramente y no hay nada que importar.
+- **Camino de error — formato de archivo no soportado**: un archivo que no es CSV ni Excel (.xlsx) se rechaza de entrada, antes de intentar leer ninguna cabecera, con un mensaje claro de qué formatos sí se aceptan.
 - **Caso límite — todas las filas tienen error**: el resumen final lo refleja (cero importadas, N con error) sin que esto se trate como una falla del sistema.
 - **Camino de error — fila inválida**: una fila con un campo obligatorio faltante o con un valor que no tiene sentido para ese campo (p. ej. año no numérico) se excluye de la importación y aparece en el resumen final con el motivo; las demás filas válidas del mismo archivo se importan igual.
 - **Camino de error — VIN duplicado**: una fila cuyo VIN ya existe en el inventario se excluye y aparece en el resumen con ese motivo; el vehículo existente no se modifica.
 - **Camino de error — fuera de la unidad de negocio permitida**: para un usuario no-administrador, una fila que apunta a otra unidad de negocio se excluye y aparece en el resumen con ese motivo.
 
 ## Acceptance criteria
+- Given un archivo que no es CSV ni Excel (.xlsx), When el usuario intenta subirlo, Then se rechaza antes de leer cabeceras, con un mensaje que indica los formatos aceptados.
 - Given un archivo con cabeceras distintas a los nombres internos del catálogo, When el usuario lo sube, Then el sistema propone una correspondencia entre cada cabecera del archivo y un campo del catálogo, editable antes de continuar.
 - Given una fila cuyo valor de marca (o unidad de negocio) no coincide con ninguna entrada del catálogo, When el usuario revisa la importación, Then esa fila se muestra como pendiente de resolución manual y no se importa hasta que el usuario le asigne una entrada existente del catálogo o la descarte.
 - Given una fila cuyo VIN ya existe en el inventario, When se procesa la importación, Then esa fila se excluye y aparece en el resumen final con el motivo "VIN duplicado", y el vehículo existente permanece sin cambios.
@@ -78,13 +82,17 @@ Para cada criterio de aceptación de abajo, una comprobación de extremo a extre
 - Given una importación terminada, When el usuario revisa el resumen, Then puede ver cuántas filas se importaron, cuántas quedaron excluidas (y por qué cada una) y cuántas requirieron resolución manual de marca/unidad de negocio.
 
 ## Points to clarify
-- **pregunta abierta** — ¿qué formatos de archivo se aceptan exactamente (solo CSV, o también Excel/.xlsx), y hay un límite razonable de filas por importación?
-- **pregunta abierta** — la referencia visual de la pantalla de revisión y del resumen final (ver *What result they get*) no existe todavía; ¿quién la aprueba antes de plan — un boceto rápido del usuario, o se deriva del estilo ya usado en la vista de inventario?
-- **suposición tomada** — una fila con marca/unidad de negocio no resuelta se queda pendiente para asignación manual en pantalla, nunca crea una entrada de catálogo nueva automáticamente. *Base:* evita que un typo en el archivo contamine el catálogo con marcas o unidades de negocio basura. *Riesgo:* si el volumen de filas no resueltas es alto en la práctica, esta pantalla de resolución manual puede volverse el cuello de botella que la spec quiere evitar — en ese caso convendría revisar si se permite creación asistida de catálogo en un ciclo posterior.
-- **suposición tomada** — un VIN duplicado siempre es error, nunca actualización del vehículo existente. *Base:* actualizar inventario existente por importación es una operación distinta (edición masiva) que esta spec explícitamente deja fuera de alcance. *Riesgo:* si en la práctica el caso de uso real es "refrescar" un inventario ya cargado, esto obligaría a un ciclo de importación por archivo completamente nuevo cada vez.
+- **suposición tomada** — una fila con marca/unidad de negocio no resuelta se queda pendiente para asignación manual en pantalla, nunca crea una entrada de catálogo nueva automáticamente. *Base:* evita que un typo en el archivo contamine el catálogo con marcas o unidades de negocio basura. *Riesgo:* si el volumen de filas no resueltas es alto en la práctica, esta pantalla de resolución manual puede volverse el cuello de botella que la spec quiere evitar — en ese caso convendría revisar si se permite creación asistida de catálogo en un ciclo posterior. *(Validada en clarify, 2026-11-17: se mantiene.)*
+- **suposición tomada** — un VIN duplicado siempre es error, nunca actualización del vehículo existente. *Base:* actualizar inventario existente por importación es una operación distinta (edición masiva) que esta spec explícitamente deja fuera de alcance. *Riesgo:* si en la práctica el caso de uso real es "refrescar" un inventario ya cargado, esto obligaría a un ciclo de importación por archivo completamente nuevo cada vez. *(Validada en clarify, 2026-11-17: se mantiene.)*
 - **decisión diferida** — si en el futuro conviene permitir importaciones recurrentes o conectadas a un feed de proveedor, queda fuera de este ciclo (ver *Non-goals*).
-- **área no formulable** — no está claro todavía si distintos proveedores entregan el mismo campo con significados sutilmente distintos (p. ej. "modelo" usado como año-modelo en algunos archivos); sospecho que hay una pregunta de mapeo semántico ahí, pero no la puedo formular con precisión sin ver un archivo real de ejemplo.
 - **decisión diferida** — este proyecto no tiene constitución ratificada (`02-DOCS/wiki/sdd/constitution.md` en `status: draft`); esta spec no hereda ningún principio formal de calidad, seguridad o UX. Si la constitución se ratifica antes de `plan`, revisar esta spec contra ella.
+- **suposición tomada** — la referencia visual exacta de la pantalla de revisión y del resumen final no se aprueba en esta spec; se propone y aprueba como boceto concreto en la fase `plan`/implementación, usando el estilo visual ya existente en la vista de inventario como punto de partida. *Base:* la spec fija el contrato de comportamiento (qué ve el usuario, en qué términos observables); el diseño de pantalla concreto es HOW, no WHAT. *Riesgo:* ninguno relevante — si el boceto no convence al aprobarse en `plan`, se ajusta ahí sin tocar este contrato.
+
+## Clarifications
+- **2026-11-17** — Q: ¿qué formatos de archivo acepta el importador, y hay un límite de filas? → Decisión: CSV y Excel (.xlsx) únicamente, sin límite estricto de filas por ahora. *Por qué:* son los dos formatos que entregan dealers/proveedores en la práctica; un límite sin datos reales de volumen sería arbitrario. Se reflejó en *Non-goals*, *Behaviour* (camino de error de formato no soportado) y un nuevo criterio de aceptación.
+- **2026-11-17** — Área "significado distinto del mismo campo entre proveedores" (p. ej. "modelo" como año-modelo) → Resuelta sin necesidad de regla nueva: el mecanismo de mapeo de cabeceras editable, ya descrito en *Behaviour*, cubre cualquier columna ambigua porque el usuario la corrige fila por fila antes de confirmar. No generó cambio en la spec.
+- **2026-11-17** — Punto "¿quién aprueba la referencia visual de la pantalla de revisión/resumen?" → Resuelto como proceso: se aprueba un boceto concreto en la fase `plan`/implementación, no en esta spec (la spec fija solo el contrato de comportamiento). Registrado como *suposición tomada* en *Points to clarify*.
 
 ## Revisions
 - 2026-11-17 — Primera versión. Dirección A (importador asistido con revisión previa) y las 4 recomendaciones de resolución de catálogo, permisos, VIN duplicado e importación parcial, aprobadas por el usuario en el chat previo a escribir este documento.
+- 2026-11-17 — Clarify: formatos de archivo fijados a CSV + Excel (.xlsx), sin límite de filas; un área no formulable se resolvió por el mecanismo de mapeo editable ya existente; referencia visual de pantalla diferida a `plan`. Spec pasa a `status: clarified`.

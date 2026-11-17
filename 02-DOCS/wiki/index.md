@@ -6,4 +6,4 @@
 
 | Spec | Estado | Qué cubre |
 |------|--------|-----------|
-| [importador-inventario](sdd/specs/importador-inventario.md) | draft | Importador de inventario de vehículos desde archivo (mapeo de cabeceras, resolución contra catálogo marca/unidad de negocio, revisión previa a guardar). |
+| [importador-inventario](sdd/specs/importador-inventario.md) | clarified | Importador de inventario de vehículos desde archivo (mapeo de cabeceras, resolución contra catálogo marca/unidad de negocio, revisión previa a guardar). |
