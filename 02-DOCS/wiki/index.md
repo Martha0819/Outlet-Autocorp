@@ -12,4 +12,4 @@
 
 | Plan | Estado | Qué cubre |
 |------|--------|-----------|
-| [importador-inventario](sdd/plans/importador-inventario.md) | draft | Dos endpoints (analizar / confirmar) + pantalla de revisión; sin estado de servidor entre pasos; sin migración de datos. |
+| [importador-inventario](sdd/plans/importador-inventario.md) | tasks listas | Dos endpoints (analizar / confirmar) + pantalla de revisión; sin estado de servidor entre pasos; sin migración de datos. |

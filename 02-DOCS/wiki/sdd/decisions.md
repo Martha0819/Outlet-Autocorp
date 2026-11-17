@@ -25,3 +25,9 @@ Registro append-only de decisiones de alcance tomadas durante specify/clarify/pl
 - La confirmación crea los vehículos fila por fila (no en una transacción todo-o-nada), y re-valida cada fila en el momento de crear — así una fila que se vuelve inválida entre el análisis y la confirmación (p. ej. VIN duplicado por una alta concurrente) no revierte las demás.
 - Resolución de marca/unidad de negocio contra catálogo: solo coincidencia exacta tras normalizar (minúsculas, sin acentos, espacios colapsados) pasa automáticamente a "lista"; cualquier otro caso va a resolución manual — nunca se auto-acepta un match aproximado.
 - No se elige todavía la librería de lectura de CSV/XLSX — queda para `implement`, junto con el boceto exacto de la pantalla de revisión/resumen.
+
+## 2026-11-17 — importador-inventario (tasks)
+
+- El proyecto no tenía ningún framework de pruebas instalado (sin jest/vitest/playwright, sin archivos `*.test.js` en el repo). Se añade **Vitest** como primera tarea (T001) porque es requisito para que cualquier done-check del plan sea ejecutable. Es una decisión de tooling, reversible, no de arquitectura.
+- 16 tareas (T001–T016), TDD por pares prueba→implementación donde aplica. Todas forecast en tier de riesgo 1 (`rsc risk`, clase `default`, porque `02-DOCS/wiki/sdd/config.yaml` todavía no existe).
+- Entrega sugerida: `ask-on-risk` — el volumen cabe en un PR, pero toca permisos y alta de inventario, así que conviene revisión humana antes de mezclar.
