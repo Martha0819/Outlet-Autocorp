@@ -18,3 +18,10 @@ Registro append-only de decisiones de alcance tomadas durante specify/clarify/pl
 - La ambigüedad de significado de columnas entre proveedores (p. ej. "modelo" como año-modelo) no necesitó regla nueva: la cubre el mapeo de cabeceras editable que ya estaba en la spec.
 - La referencia visual de la pantalla de revisión/resumen se aprueba como boceto concreto en `plan`, no en la spec.
 - Spec pasa a `status: clarified`.
+
+## 2026-11-17 — importador-inventario (plan)
+
+- Flujo partido en dos llamadas al servidor (analizar archivo, luego confirmar importación), sin estado de importación persistido a medias en el servidor: el resultado del análisis viaja completo en la respuesta y vive en el estado de la pantalla hasta que el usuario confirma. Evita introducir una entidad/almacenamiento temporal nuevo para un flujo que cabe en una ida y vuelta.
+- La confirmación crea los vehículos fila por fila (no en una transacción todo-o-nada), y re-valida cada fila en el momento de crear — así una fila que se vuelve inválida entre el análisis y la confirmación (p. ej. VIN duplicado por una alta concurrente) no revierte las demás.
+- Resolución de marca/unidad de negocio contra catálogo: solo coincidencia exacta tras normalizar (minúsculas, sin acentos, espacios colapsados) pasa automáticamente a "lista"; cualquier otro caso va a resolución manual — nunca se auto-acepta un match aproximado.
+- No se elige todavía la librería de lectura de CSV/XLSX — queda para `implement`, junto con el boceto exacto de la pantalla de revisión/resumen.
