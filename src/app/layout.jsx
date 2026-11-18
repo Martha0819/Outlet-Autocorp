@@ -1,4 +1,5 @@
 import './globals.css';
+import './responsive.css';
 import { ReduxProvider } from '@/store/ReduxProvider';
 import { AppLayoutWrapper } from '@/components/layout/AppLayoutWrapper';
 import { ToastContainer } from '@/components/ui/Toast';

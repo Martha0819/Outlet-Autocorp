@@ -194,14 +194,14 @@ export function InventarioView() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ position: 'relative', width: 260 }}>
+          <div className="inventory-search-action-group" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div className="inventory-search-box" style={{ position: 'relative', width: 260, maxWidth: '100%' }}>
               <input
                 type="text"
                 placeholder="Buscar vehículo o VIN..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '9px 18px 9px 36px', borderRadius: 9999, border: '1px solid #e2dedc', fontSize: 13, outline: 'none', backgroundColor: '#ffffff', color: '#251f1d' }}
+                style={{ width: '100%', padding: '9px 18px 9px 36px', borderRadius: 9999, border: '1px solid #e2dedc', fontSize: 13, outline: 'none', backgroundColor: '#ffffff', color: '#251f1d', boxSizing: 'border-box' }}
               />
               <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8e8784', display: 'flex' }}>
                 <SearchIcon size={14} />
@@ -211,7 +211,8 @@ export function InventarioView() {
             {puedeCrear && (
               <button
                 onClick={() => setShowAddRow((prev) => !prev)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '9px 18px', borderRadius: 9999, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                className="btn-add-vehicle"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '9px 18px', borderRadius: 9999, fontSize: 12, fontWeight: 800, cursor: 'pointer', boxSizing: 'border-box' }}
               >
                 <PlusIcon size={14} /> <span>{showAddRow ? 'Cancelar' : 'Agregar vehículo'}</span>
               </button>

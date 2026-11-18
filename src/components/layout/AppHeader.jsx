@@ -8,7 +8,7 @@ import { useLogout } from '@/store/features/auth/useLogout';
 import { formatDate, getInitials, getTodayISO } from '@/lib/utils';
 import { CalendarIcon } from '@/components/ui/Icons';
 
-export function AppHeader() {
+export function AppHeader({ onToggleMobileMenu }) {
   const pathname = usePathname();
   const usuario = useAppSelector((state) => state.auth.usuario);
   const { logout: handleLogout } = useLogout();
@@ -27,7 +27,31 @@ export function AppHeader() {
 
   return (
     <header className="app-header">
-      <div className="header-left">
+      <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Botón Hamburguesa Móvil */}
+        <button
+          onClick={onToggleMobileMenu}
+          className="btn-hamburger-mobile"
+          aria-label="Abrir menú de navegación"
+          style={{
+            background: 'none',
+            border: '1px solid #d5d0ce',
+            borderRadius: '8px',
+            padding: '7px 8px',
+            cursor: 'pointer',
+            display: 'none', // se activa en CSS a <=768px
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#251f1d',
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <div>
           <div className="header-outlet-name">OUTLET FARRERA</div>
           <h2 className="header-view-title">{getPageTitle(pathname)}</h2>
@@ -61,7 +85,7 @@ export function AppHeader() {
             >
               {getInitials(usuario.nombre)}
             </span>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="header-user-text" style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
                 {usuario.nombre}
               </span>

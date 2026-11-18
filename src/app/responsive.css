@@ -1,0 +1,527 @@
+/* ==========================================================================
+   OUTLET AUTOCORP CRM — SISTEMA RESPONSIVO MULTIDISPOSITIVO
+   Compatibilidad: Pantallas Grandes (2K/4K/Escritorio), Laptops/Tablets y Celulares
+   ========================================================================== */
+
+/* ─── 1. BASE Y ESTRUCTURA GENERAL ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.app-main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: 260px;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #f6f6f6;
+  overflow-x: hidden;
+}
+
+.app-content-area {
+  flex: 1;
+  width: 100%;
+  max-width: 100%;
+  padding: 24px 32px 60px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+/* ─── 2. CONTENEDORES Y BARRAS DE HERRAMIENTAS (ANTI-DESBORDAMIENTO) ────────── */
+.dashboard-toolbar,
+.table-toolbar,
+.inventory-toolbar,
+.card {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  position: relative;
+}
+
+.quick-actions-group,
+.period-buttons,
+.toolbar-filters {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+.btn {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+}
+
+/* ─── 3. PANTALLAS MUY GRANDES (>= 1400px) ─────────────────────────────────── */
+@media (min-width: 1400px) {
+  .app-content-area {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 28px 36px 65px;
+  }
+
+  .dashboard-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 16px !important;
+  }
+
+  .quick-actions-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-end !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 16px !important;
+  }
+
+  .dashboard-charts-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 22px !important;
+  }
+}
+
+/* ─── 4. LAPTOPS Y ESCRITORIOS MEDIANOS (1025px - 1399px) ─────────────────── */
+/* AQUÍ SE RESUELVE EL DESBORDE DE BOTONES EN LAPTOPS */
+@media (max-width: 1399px) and (min-width: 1025px) {
+  .app-content-area {
+    padding: 20px 24px 50px;
+  }
+
+  .dashboard-toolbar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 16px 20px !important;
+  }
+
+  .period-filter-group {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .quick-actions-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #f2efed !important;
+  }
+
+  .quick-actions-group .btn {
+    padding: 9px 14px !important;
+    font-size: 12px !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  .dashboard-charts-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 18px !important;
+  }
+}
+
+/* ─── 5. TABLETAS Y LAPTOPS COMPACTAS (769px - 1024px) ─────────────────────── */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .app-sidebar {
+    width: 230px !important;
+  }
+
+  .app-main-wrapper {
+    margin-left: 230px !important;
+  }
+
+  .app-content-area {
+    padding: 18px 18px 45px;
+  }
+
+  .dashboard-toolbar {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+    padding: 16px !important;
+  }
+
+  .quick-actions-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #f2efed !important;
+  }
+
+  .quick-actions-group .btn {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .dashboard-charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .guardias-week-grid.mode-full {
+    overflow-x: auto !important;
+    display: flex !important;
+    gap: 12px !important;
+  }
+
+  .guardias-week-grid.mode-full .guardias-day-column {
+    min-width: 180px !important;
+    flex: 0 0 180px !important;
+  }
+}
+
+/* ─── 6. CELULARES Y MÓVILES (<= 768px) ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .app-main-wrapper {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .app-content-area {
+    padding: 12px 10px 40px !important;
+  }
+
+  /* Sidebar móvil */
+  .app-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    width: 280px !important;
+    max-width: 85vw !important;
+    z-index: 1100 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.45) !important;
+  }
+
+  .app-sidebar.open {
+    transform: translateX(0) !important;
+  }
+
+  .btn-hamburger-mobile {
+    display: inline-flex !important;
+  }
+
+  .app-header {
+    height: 60px !important;
+    padding: 0 12px !important;
+  }
+
+  .header-view-title {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 160px !important;
+  }
+
+  .header-outlet-name {
+    font-size: 9px !important;
+  }
+
+  .header-date {
+    display: none !important;
+  }
+
+  /* Toolbar de Dashboard Móvil */
+  .dashboard-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+
+  .period-filter-group {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .period-buttons {
+    display: flex !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px !important;
+  }
+
+  .btn-period {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 6px 6px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Botones de acción rápida: 2 columnas perfectas sin salirse */
+  .quick-actions-group {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #f2efed !important;
+  }
+
+  .quick-actions-group .btn {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+    overflow: hidden !important;
+  }
+
+  .quick-actions-group .btn span {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Rejilla de 6 KPIs en Celular: 2 columnas */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .kpi-card {
+    padding: 12px 10px !important;
+    min-height: 100px !important;
+  }
+
+  .kpi-top {
+    margin-bottom: 4px !important;
+  }
+
+  .kpi-icon-wrapper {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .kpi-icon-wrapper svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .kpi-compare,
+  .kpi-badge-live {
+    font-size: 8px !important;
+    padding: 2px 4px !important;
+  }
+
+  .kpi-label {
+    font-size: 10px !important;
+  }
+
+  .kpi-value {
+    font-size: 16px !important;
+    line-height: 1.1 !important;
+  }
+
+  .kpi-unit {
+    font-size: 10px !important;
+  }
+
+  .kpi-subtext {
+    font-size: 9px !important;
+    margin-top: 2px !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  /* Gráficas y Embudo: 1 Columna */
+  .dashboard-charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-top: 12px !important;
+  }
+
+  .funnel-summary {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Calendario de Guardias Móvil: Carrusel Táctil Fluido */
+  .guardias-week-grid {
+    display: flex !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 14px !important;
+    gap: 12px !important;
+  }
+
+  .guardias-day-column {
+    flex: 0 0 85vw !important;
+    max-width: 320px !important;
+    min-width: 260px !important;
+    scroll-snap-align: center !important;
+    min-height: 360px !important;
+  }
+
+  /* Popover flotante en Celular */
+  .shift-popover {
+    max-width: calc(100vw - 24px) !important;
+    width: 280px !important;
+    left: 12px !important;
+  }
+
+  /* Directorio de Clientes Móvil */
+  .toolbar-search-box {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .toolbar-filters {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .toolbar-filters select,
+  .toolbar-filters button {
+    width: 100% !important;
+  }
+
+  /* Inventario en Celular: Buscador y Botón Agregar Vehículo */
+  .inventory-search-action-group {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .inventory-search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .btn-add-vehicle {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* Tabla de Clientes con Scroll Horizontal */
+  .table-responsive,
+  div[style*="overflowX: 'auto'"],
+  div[style*="overflow-x: auto"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+  }
+
+  table {
+    min-width: 700px !important;
+  }
+
+  /* Modales Móviles */
+  .modal-backdrop {
+    padding: 8px !important;
+  }
+
+  .modal-box {
+    width: 100% !important;
+    max-width: calc(100vw - 16px) !important;
+    max-height: 94vh !important;
+    overflow-y: auto !important;
+    padding: 16px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  /* Ficha 360 y Formulario 2 Col */
+  .ficha-360-grid,
+  .form-row-2col {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+
+  .ficha-actions-bar {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .ficha-actions-bar button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* ─── 7. CELULARES MUY PEQUEÑOS (<= 480px) ─────────────────────────────────── */
+@media (max-width: 480px) {
+  .header-user-text {
+    display: none !important;
+  }
+
+  .quick-actions-group {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ficha-actions-bar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .kpi-card {
+    padding: 8px 10px !important;
+  }
+
+  .kpi-value {
+    font-size: 15px !important;
+  }
+
+  .kpi-subtext {
+    display: none !important;
+  }
+
+  .btn-period {
+    padding: 4px 4px !important;
+    font-size: 10px !important;
+  }
+}
