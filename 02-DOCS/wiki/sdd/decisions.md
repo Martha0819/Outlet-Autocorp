@@ -70,3 +70,8 @@ Por qué — El criterio de aceptación AC4 de la spec exige que "la fila incomp
 Contexto — El plan preveía pruebas e2e en navegador para el camino feliz y el camino mixto; Playwright no estaba instalado y añadirlo (con descarga de binarios de navegador) es una dependencia pesada para este ciclo.
 Decisión (confirmada por el usuario) — T014/T015 se implementaron como pruebas de flujo completo sin navegador: encadenan los dos endpoints reales (`analizar` → `confirmar`) contra la base de datos de prueba real, sin mocks de la lógica de negocio.
 Por qué — Prueban el comportamiento observable de punta a punta (lo que importa para las ACs) sin la inversión de una suite de navegador; la pantalla en sí ya quedó cubierta por los tests de componente de T012/T013.
+
+## 2026-11-18 — importador-inventario (/code-review, 2 hallazgos corregidos)
+
+- `confirmarFilas` solo capturaba el error de VIN duplicado (P2002) al crear un vehículo; cualquier otro fallo (p. ej. un valor de `condicion` que no es NUEVO/SEMINUEVO) se relanzaba, tumbando toda la petición HTTP sin devolver resumen y dejando las filas ya creadas en esa misma corrida sin que el usuario lo supiera — violaba la invariante "una fila mala no bloquea a las demás". Corregido: cualquier error al crear una fila se reporta en `conError` y el lote continúa; además se valida `condicion` contra los valores válidos antes de intentar crear, para dar un motivo claro en vez de un error genérico de base de datos.
+- `clasificarFilas` consultaba el VIN de cada fila contra la base una por una (N consultas secuenciales). Como la spec explícitamente no impone límite de filas por archivo, esto sería el costo dominante en un archivo grande. Corregido: una sola consulta `vin IN (...)` antes del bucle.

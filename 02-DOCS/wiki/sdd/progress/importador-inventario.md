@@ -80,4 +80,10 @@ Append-only. Nunca se reescriben entradas viejas.
 - `npm test`: 40/40 verde. `npm run build`: verde, sin errores de tipo/compilación.
 - `npm run lint`: **no corrido** — ESLint nunca se configuró en este proyecto (pide configuración interactiva al primer uso); condición preexistente, no introducida por esta feature. Reportado como no corrido, no como pasado.
 - Todas las filas de la tabla de tareas (T001–T015) con su done-check comprobado arriba.
-- Pendiente para el humano antes de dar por cerrado el ciclo completo (stage 5): `verify`/`review` de cierre sobre toda la rama, y revisión adversarial (`/code-review`) antes de cualquier envío — ver mensaje de cierre en el chat.
+- Pendiente para el humano antes de dar por cerrado el ciclo completo (stage 5): `verify`/`review` de cierre sobre toda la rama antes de cualquier envío.
+
+## /code-review (medium) — 2026-11-18
+- 2 hallazgos reportados, ambos reales, ambos corregidos:
+  1. (correctness) `confirmarFilas` relanzaba cualquier error de creación que no fuera VIN duplicado, abortando el lote completo sin resumen — corregido: todo error de creación se reporta en `conError`, el lote nunca se interrumpe; se agregó validación explícita de `condicion`.
+  2. (efficiency) chequeo de VIN duplicado en el análisis hacía una consulta por fila — corregido: una sola consulta `IN (...)` antes del bucle.
+- `npm test`: 41/41 verde (se añadió una prueba de regresión para el hallazgo 1). `npm run build`: verde.
