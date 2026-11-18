@@ -14,6 +14,7 @@ import { useAppSelector } from '@/store/hooks';
 import { SearchIcon, PlusIcon, EditIcon, CheckIcon, CloseIcon } from '@/components/ui/Icons';
 import { Pager } from '@/components/ui/Pager';
 import { UnidadNegocioField } from '@/components/ui/UnidadNegocioField';
+import { ImportadorInventario } from './ImportadorInventario';
 
 const ESTATUS_OPTIONS = ['DISPONIBLE', 'APARTADO', 'VENDIDO', 'NO_DISPONIBLE'];
 const ESTATUS_LABELS = { DISPONIBLE: 'Disponible', APARTADO: 'Apartado', VENDIDO: 'Vendido', NO_DISPONIBLE: 'No disponible' };
@@ -87,7 +88,7 @@ export function InventarioView() {
   // quedar "parado" en una página 4 que ya no existe para el filtro nuevo.
   useEffect(() => { setPage(1); }, [filterEstatus, marcaFilter, condicionFilter, searchDebounced]);
 
-  const { data, isLoading } = useGetVehiculosQuery({
+  const { data, isLoading, refetch: refetchVehiculos } = useGetVehiculosQuery({
     page,
     pageSize: PAGE_SIZE,
     estatus: filterEstatus,
@@ -98,6 +99,7 @@ export function InventarioView() {
   const vehiculosPagina = data?.items ?? [];
 
   const [showAddRow, setShowAddRow] = useState(false);
+  const [showImportador, setShowImportador] = useState(false);
   const [newForm, setNewForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -214,8 +216,27 @@ export function InventarioView() {
                 <PlusIcon size={14} /> <span>{showAddRow ? 'Cancelar' : 'Agregar vehículo'}</span>
               </button>
             )}
+
+            {puedeCrear && (
+              <button
+                onClick={() => setShowImportador((prev) => !prev)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#ffffff', color: '#251f1d', border: '1px solid #d5d0ce', padding: '9px 18px', borderRadius: 9999, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+              >
+                <span>{showImportador ? 'Cancelar importación' : 'Importar desde archivo'}</span>
+              </button>
+            )}
           </div>
         </div>
+
+        {showImportador && (
+          <div style={{ paddingTop: 14, borderTop: '1px solid #eae7e5' }}>
+            <ImportadorInventario
+              onImportacionCompleta={() => {
+                refetchVehiculos();
+              }}
+            />
+          </div>
+        )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', paddingTop: 14, borderTop: '1px solid #eae7e5' }}>
           <select value={marcaFilter} onChange={(e) => setMarcaFilter(e.target.value)} style={selectPillStyle}>
@@ -239,8 +260,8 @@ export function InventarioView() {
         {/* Fila de alta inline — sin modal */}
         {showAddRow && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', paddingTop: 14, borderTop: '1px solid #eae7e5' }}>
-            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Nombre" value={newForm.nombre} onChange={(e) => setNewForm({ ...newForm, nombre: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Modelo" value={newForm.modelo} onChange={(e) => setNewForm({ ...newForm, modelo: e.target.value })} /></div>
+            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Descripción" value={newForm.nombre} onChange={(e) => setNewForm({ ...newForm, nombre: e.target.value })} /></div>
             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" placeholder="Año" value={newForm.anio} onChange={(e) => setNewForm({ ...newForm, anio: e.target.value })} /></div>
             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" placeholder="Km" value={newForm.km} onChange={(e) => setNewForm({ ...newForm, km: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Transmisión" value={newForm.transmision} onChange={(e) => setNewForm({ ...newForm, transmision: e.target.value })} /></div>
@@ -308,8 +329,8 @@ export function InventarioView() {
                       <tr key={v.id} style={{ borderBottom: '1px solid #eae7e5', background: '#fff8f0' }}>
                         <td style={{ padding: '14px 16px' }} colSpan={7}>
                           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} /></div>
-                            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} value={editForm.modelo} onChange={(e) => setEditForm({ ...editForm, modelo: e.target.value })} /></div>
+                            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Modelo" value={editForm.modelo} onChange={(e) => setEditForm({ ...editForm, modelo: e.target.value })} /></div>
+                            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Descripción" value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} /></div>
                             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" value={editForm.anio} onChange={(e) => setEditForm({ ...editForm, anio: e.target.value })} /></div>
                             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" value={editForm.km} onChange={(e) => setEditForm({ ...editForm, km: e.target.value })} /></div>
                             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} value={editForm.transmision} onChange={(e) => setEditForm({ ...editForm, transmision: e.target.value })} /></div>
