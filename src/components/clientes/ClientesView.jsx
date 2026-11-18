@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNotify } from '@/store/features/ui/useNotify';
-import { formatDate, getInitials, validatePhone } from '@/lib/utils';
+import { formatDate, getInitials, validatePhone, formatCurrency } from '@/lib/utils';
 import { useGetCatalogoQuery } from '@/store/features/catalogos/catalogoApiSlice';
 import {
   useGetClientesQuery,
@@ -10,391 +10,1059 @@ import {
   useUpdateClienteMutation,
 } from '@/store/features/clientes/clienteApiSlice';
 import { useGetVehiculosQuery } from '@/store/features/vehiculos/vehiculoApiSlice';
-import { useGetDemosQuery, useCreateDemoMutation, useDeleteDemoMutation } from '@/store/features/demos/demoApiSlice';
+import {
+  useGetDemosQuery,
+  useCreateDemoMutation,
+  useDeleteDemoMutation,
+} from '@/store/features/demos/demoApiSlice';
 import { usePermiso } from '@/store/features/auth/usePermiso';
-import { SearchIcon, PlusIcon, EditIcon, CheckIcon, CloseIcon, TrashIcon, UsersIcon, TestDriveIcon } from '@/components/ui/Icons';
-import { Pager } from '@/components/ui/Pager';
-
-const PAGE_SIZE = 15;
-
-function useDebouncedValue(value, delayMs = 350) {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(timer);
-  }, [value, delayMs]);
-  return debounced;
-}
+import {
+  SearchIcon,
+  PlusIcon,
+  EditIcon,
+  TrashIcon,
+  CloseIcon,
+  EyeIcon,
+  CarIcon,
+  TestDriveIcon,
+  FileTextIcon,
+  DollarIcon,
+  CheckIcon,
+} from '@/components/ui/Icons';
+import { TestDriveModal } from '@/components/demos/TestDriveModal';
 
 const inputStyle = {
   width: '100%',
-  padding: '8px 12px',
+  padding: '9px 12px',
   borderRadius: 8,
   border: '1px solid #d5d0ce',
   fontSize: 13,
   backgroundColor: '#ffffff',
-  color: '#251f1d'
+  color: '#251f1d',
+  outline: 'none',
 };
 
-function emptyForm() {
-  return { nombre: '', telefono: '', correo: '', visitaMarcaEspecifica: false, marcaId: '', observaciones: '' };
+function formatPhoneDisplay(phone) {
+  if (!phone) return '—';
+  const clean = String(phone).replace(/\D/g, '');
+  if (clean.length === 10) {
+    return `${clean.slice(0, 2)} ${clean.slice(2, 6)} ${clean.slice(6)}`;
+  }
+  return phone;
 }
 
-function DirectorioTab() {
+export function ClientesView() {
   const notify = useNotify();
   const { puede } = usePermiso();
   const puedeCrear = puede('cliente', 'crear');
   const puedeEditar = puede('cliente', 'editar');
-  const { data: marcas = [] } = useGetCatalogoQuery('marca');
-  const [createCliente, { isLoading: isCreating }] = useCreateClienteMutation();
-  const [updateCliente] = useUpdateClienteMutation();
 
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const searchDebounced = useDebouncedValue(search);
-  useEffect(() => { setPage(1); }, [searchDebounced]);
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [sortBy, setSortBy] = useState('recent');
 
-  const { data, isLoading } = useGetClientesQuery({ page, pageSize: PAGE_SIZE, q: searchDebounced });
-  const clientesPagina = data?.items ?? [];
+  // Modales
+  const [activeClientModal, setActiveClientModal] = useState(null); // { isEdit: boolean, client: object }
+  const [active360Client, setActive360Client] = useState(null);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [demoClientId, setDemoClientId] = useState(null);
 
-  const [showAddRow, setShowAddRow] = useState(false);
-  const [newForm, setNewForm] = useState(emptyForm());
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({});
+  // Formulario de Cliente (Alta / Edición)
+  const [formData, setFormData] = useState({
+    nombre: '',
+    telefono: '',
+    correo: '',
+    visitaMarcaEspecifica: false,
+    marcaId: '',
+    observaciones: '',
+  });
 
-  const reportError = async (promise, fallbackMessage) => {
-    try {
-      await promise.unwrap();
-      return true;
-    } catch (error) {
-      notify(error?.data?.error || fallbackMessage, 'error');
-      return false;
-    }
+  // Consultas RTK Query
+  const { data: marcas = [] } = useGetCatalogoQuery('marca');
+  const { data: clientesData, isLoading: loadingClientes } = useGetClientesQuery();
+  const allClients = useMemo(() => {
+    if (!clientesData) return [];
+    return Array.isArray(clientesData) ? clientesData : (clientesData.items || []);
+  }, [clientesData]);
+
+  const { data: vehiculosData } = useGetVehiculosQuery();
+  const allVehicles = useMemo(() => {
+    if (!vehiculosData) return [];
+    return Array.isArray(vehiculosData) ? vehiculosData : (vehiculosData.items || []);
+  }, [vehiculosData]);
+
+  const { data: demosData } = useGetDemosQuery();
+  const allDemos = useMemo(() => {
+    if (!demosData) return [];
+    return Array.isArray(demosData) ? demosData : (demosData.items || []);
+  }, [demosData]);
+
+  const [createCliente, { isLoading: isCreating }] = useCreateClienteMutation();
+  const [updateCliente, { isLoading: isUpdating }] = useUpdateClienteMutation();
+
+  // Filtrado de clientes
+  const filteredClients = useMemo(() => {
+    return allClients
+      .filter((c) => {
+        if (selectedBrand !== 'all') {
+          if (selectedBrand === 'sin_preferencia') {
+            if (c.visitaMarcaEspecifica) return false;
+          } else {
+            if (!c.visitaMarcaEspecifica || String(c.marcaId) !== String(selectedBrand)) {
+              return false;
+            }
+          }
+        }
+
+        if (search.trim()) {
+          const q = search.toLowerCase();
+          const matchName = (c.nombre || '').toLowerCase().includes(q);
+          const matchPhone = (c.telefono || '').includes(q);
+          const matchEmail = (c.correo || '').toLowerCase().includes(q);
+          if (!matchName && !matchPhone && !matchEmail) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'name') return (a.nombre || '').localeCompare(b.nombre || '');
+        // default: recent
+        return new Date(b.createdAt || b.fechaRegistro || 0) - new Date(a.createdAt || a.fechaRegistro || 0);
+      });
+  }, [allClients, selectedBrand, search, sortBy]);
+
+  // Handlers para modales
+  const openCreateModal = () => {
+    setFormData({
+      nombre: '',
+      telefono: '',
+      correo: '',
+      visitaMarcaEspecifica: false,
+      marcaId: '',
+      observaciones: '',
+    });
+    setActiveClientModal({ isEdit: false });
   };
 
-  const handleCreate = async () => {
-    if (!newForm.nombre.trim() || !newForm.telefono.trim()) {
-      notify('Nombre y teléfono son requeridos', 'error');
+  const openEditModal = (client) => {
+    setFormData({
+      nombre: client.nombre || '',
+      telefono: client.telefono || '',
+      correo: client.correo || '',
+      visitaMarcaEspecifica: Boolean(client.visitaMarcaEspecifica),
+      marcaId: client.marcaId ? String(client.marcaId) : '',
+      observaciones: client.observaciones || '',
+    });
+    setActiveClientModal({ isEdit: true, client });
+  };
+
+  const handleSaveClient = async (e) => {
+    e.preventDefault();
+    if (!formData.nombre.trim() || !formData.telefono.trim()) {
+      notify('Nombre y teléfono son obligatorios', 'error');
       return;
     }
-    if (!validatePhone(newForm.telefono)) {
+    if (!validatePhone(formData.telefono)) {
       notify('El teléfono debe tener 10 dígitos', 'error');
       return;
     }
-    const ok = await reportError(createCliente(newForm), 'No se pudo crear el cliente');
-    if (ok) {
-      setNewForm(emptyForm());
-      setShowAddRow(false);
-      notify(`Cliente "${newForm.nombre}" registrado`);
+    if (formData.visitaMarcaEspecifica && !formData.marcaId) {
+      notify('Selecciona la marca de interés', 'error');
+      return;
     }
-  };
 
-  const startEdit = (c) => {
-    setEditForm({
-      nombre: c.nombre,
-      telefono: c.telefono,
-      correo: c.correo || '',
-      visitaMarcaEspecifica: c.visitaMarcaEspecifica,
-      marcaId: c.marcaId || '',
-      observaciones: c.observaciones || ''
-    });
-    setEditingId(c.id);
-  };
-
-  const handleUpdate = async (id) => {
-    const ok = await reportError(updateCliente({ id, data: editForm }), 'No se pudo guardar el cambio');
-    if (ok) {
-      setEditingId(null);
-      notify('Cambios guardados');
+    try {
+      if (activeClientModal?.isEdit) {
+        await updateCliente({
+          id: activeClientModal.client.id,
+          data: {
+            nombre: formData.nombre.trim(),
+            telefono: formData.telefono.trim(),
+            correo: formData.correo?.trim() || null,
+            visitaMarcaEspecifica: formData.visitaMarcaEspecifica,
+            marcaId: formData.visitaMarcaEspecifica && formData.marcaId ? Number(formData.marcaId) : null,
+            observaciones: formData.observaciones?.trim() || null,
+          },
+        }).unwrap();
+        notify('Cliente actualizado correctamente');
+      } else {
+        await createCliente({
+          nombre: formData.nombre.trim(),
+          telefono: formData.telefono.trim(),
+          correo: formData.correo?.trim() || null,
+          visitaMarcaEspecifica: formData.visitaMarcaEspecifica,
+          marcaId: formData.visitaMarcaEspecifica && formData.marcaId ? Number(formData.marcaId) : null,
+          observaciones: formData.observaciones?.trim() || null,
+        }).unwrap();
+        notify(`Cliente "${formData.nombre}" registrado`);
+      }
+      setActiveClientModal(null);
+    } catch (err) {
+      notify(err?.data?.error || 'No se pudo guardar el cliente', 'error');
     }
   };
 
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: 60 }}>
-      <div style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24, border: '1px solid #eae7e5', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 800, color: '#251f1d', margin: '0 0 2px 0' }}>Directorio de Clientes</h3>
-            <p style={{ fontSize: 12, color: '#8e8784', margin: 0 }}>{data?.total ?? 0} clientes registrados</p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ position: 'relative', width: 260 }}>
-              <input
-                type="text"
-                placeholder="Buscar por nombre, teléfono o correo..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{ width: '100%', padding: '9px 18px 9px 36px', borderRadius: 9999, border: '1px solid #e2dedc', fontSize: 13, outline: 'none', backgroundColor: '#ffffff', color: '#251f1d' }}
-              />
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#8e8784', display: 'flex' }}>
-                <SearchIcon size={14} />
-              </span>
-            </div>
-
-            {puedeCrear && (
-              <button
-                onClick={() => setShowAddRow((prev) => !prev)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '9px 18px', borderRadius: 9999, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
-              >
-                <PlusIcon size={14} /> <span>{showAddRow ? 'Cancelar' : 'Registrar cliente'}</span>
-              </button>
-            )}
-          </div>
+    <div className="view-content active" id="view-clientes" style={{ paddingBottom: 60 }}>
+      {/* =========================================================================
+          1. BARRA SUPERIOR: BUSCADOR, FILTROS Y BOTÓN + AGREGAR CLIENTE
+          ========================================================================= */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          padding: '16px 20px',
+          borderRadius: '14px',
+          border: '1px solid #eae7e5',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+        }}
+      >
+        {/* Buscador */}
+        <div style={{ position: 'relative', flex: '1 1 300px', minWidth: '220px' }}>
+          <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#8e8784', display: 'flex' }}>
+            <SearchIcon size={16} />
+          </span>
+          <input
+            type="text"
+            placeholder="Buscar por nombre, celular o correo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '9px 12px 9px 36px',
+              borderRadius: '8px',
+              border: '1px solid #d5d0ce',
+              fontSize: '13px',
+              color: '#251f1d',
+              outline: 'none',
+              background: '#faf9f8',
+            }}
+          />
         </div>
 
-        {/* Alta inline — sin modal */}
-        {showAddRow && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 14, borderTop: '1px solid #eae7e5' }}>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 180px' }}><input style={inputStyle} placeholder="Nombre completo" value={newForm.nombre} onChange={(e) => setNewForm({ ...newForm, nombre: e.target.value })} /></div>
-              <div style={{ flex: '1 1 150px' }}><input style={inputStyle} placeholder="Teléfono (10 dígitos)" value={newForm.telefono} onChange={(e) => setNewForm({ ...newForm, telefono: e.target.value })} /></div>
-              <div style={{ flex: '1 1 200px' }}><input style={inputStyle} type="email" placeholder="Correo (opcional)" value={newForm.correo} onChange={(e) => setNewForm({ ...newForm, correo: e.target.value })} /></div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#251f1d' }}>
-                <input
-                  type="checkbox"
-                  checked={newForm.visitaMarcaEspecifica}
-                  onChange={(e) => setNewForm({ ...newForm, visitaMarcaEspecifica: e.target.checked, marcaId: e.target.checked ? newForm.marcaId : '' })}
-                  style={{ accentColor: '#ff8901' }}
-                />
-                Busca una marca específica
-              </label>
-              {newForm.visitaMarcaEspecifica && (
-                <select style={{ ...inputStyle, width: 'auto' }} value={newForm.marcaId} onChange={(e) => setNewForm({ ...newForm, marcaId: e.target.value })}>
-                  <option value="">Marca…</option>
-                  {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                </select>
-              )}
-              <input style={{ ...inputStyle, flex: '1 1 220px' }} placeholder="Observaciones (opcional)" value={newForm.observaciones} onChange={(e) => setNewForm({ ...newForm, observaciones: e.target.value })} />
-              <button
-                onClick={handleCreate}
-                disabled={isCreating}
-                style={{ backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '9px 18px', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: isCreating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-              >
-                Registrar
-              </button>
-            </div>
+        {/* Filtros a la derecha */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: '#6e6764', fontWeight: 600 }}>Marca de interés:</span>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d5d0ce',
+                fontSize: '12px',
+                fontWeight: 600,
+                background: '#ffffff',
+                color: '#251f1d',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="all">Todas las marcas</option>
+              <option value="sin_preferencia">Sin preferencia</option>
+              {marcas.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nombre}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: '#6e6764', fontWeight: 600 }}>Ordenar:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #d5d0ce',
+                fontSize: '12px',
+                fontWeight: 600,
+                background: '#ffffff',
+                color: '#251f1d',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="recent">Más recientes primero</option>
+              <option value="name">Alfabético (A-Z)</option>
+            </select>
+          </div>
+
+          {puedeCrear && (
+            <button
+              onClick={openCreateModal}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: '#ff8901',
+                color: '#251f1d',
+                border: 'none',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(255,137,1,0.25)',
+              }}
+            >
+              <PlusIcon size={14} /> <span>Agregar cliente</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Lista */}
-      <div style={{ backgroundColor: '#ffffff', borderRadius: 16, border: '1px solid #eae7e5', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', padding: '12px 16px' }}>
-        {isLoading ? (
-          <p style={{ fontSize: 13, color: '#8e8784', padding: '20px 0', textAlign: 'center' }}>Cargando…</p>
-        ) : clientesPagina.length === 0 ? (
-          <p style={{ fontSize: 13, color: '#8e8784', padding: '20px 0', textAlign: 'center' }}>No se encontraron clientes.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {clientesPagina.map((c) => {
-              const isEditing = editingId === c.id;
+      {/* =========================================================================
+          2. TABLA DE CLIENTES
+          ========================================================================= */}
+      <div
+        className="card"
+        style={{
+          borderRadius: '14px',
+          border: '1px solid #eae7e5',
+          overflow: 'hidden',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.02)',
+        }}
+      >
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#faf9f8', borderBottom: '1px solid #eae7e5' }}>
+                <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px' }}>
+                  NOMBRE DE CLIENTE
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px' }}>
+                  CELULAR
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px' }}>
+                  CORREO
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px' }}>
+                  ¿VISITA UNA MARCA EN ESPECÍFICO?
+                </th>
+                <th style={{ padding: '14px 16px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px' }}>
+                  COMENTARIOS
+                </th>
+                <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: 800, color: '#251f1d', letterSpacing: '0.6px', textAlign: 'right' }}>
+                  ACCIONES
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loadingClientes ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#8e8784', fontSize: '13px' }}>
+                    Cargando clientes…
+                  </td>
+                </tr>
+              ) : filteredClients.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '48px 20px', textAlign: 'center' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 700, color: '#251f1d', margin: '0 0 6px 0' }}>
+                      No se encontraron clientes registrados
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#8e8784', margin: '0 0 16px 0' }}>
+                      {search ? 'Prueba con otros términos de búsqueda.' : 'Comienza registrando al primer cliente en el showroom.'}
+                    </p>
+                    {puedeCrear && (
+                      <button
+                        onClick={openCreateModal}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                      >
+                        <PlusIcon size={13} /> Registrar primer cliente
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ) : (
+                filteredClients.map((client) => {
+                  const clientDemos = allDemos.filter((d) => d.clienteId === client.id);
+                  const demoCount = clientDemos.length;
 
-              if (isEditing) {
-                return (
-                  <div key={c.id} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 16px', borderRadius: 8, background: '#fff8f0', border: '1px solid #f0edeb' }}>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      <div style={{ flex: '1 1 180px' }}><input style={inputStyle} value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} /></div>
-                      <div style={{ flex: '1 1 150px' }}><input style={inputStyle} value={editForm.telefono} onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })} /></div>
-                      <div style={{ flex: '1 1 200px' }}><input style={inputStyle} type="email" value={editForm.correo} onChange={(e) => setEditForm({ ...editForm, correo: e.target.value })} /></div>
+                  return (
+                    <tr
+                      key={client.id}
+                      style={{ borderBottom: '1px solid #f0edeb', transition: 'background 0.15s' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#faf9f8')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      {/* Nombre y Avatar */}
+                      <td style={{ padding: '14px 18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span
+                            style={{
+                              width: '34px',
+                              height: '34px',
+                              borderRadius: '50%',
+                              backgroundColor: '#251f1d',
+                              color: '#ffffff',
+                              fontWeight: 800,
+                              fontSize: '13px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {getInitials(client.nombre)}
+                          </span>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d' }}>
+                              {client.nombre}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#8e8784' }}>
+                              Alta: {formatDate(client.createdAt || client.fechaRegistro, 'short')} · {demoCount > 0 ? `${demoCount} pruebas` : '1 visita'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Celular */}
+                      <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, color: '#251f1d', whiteSpace: 'nowrap' }}>
+                        {formatPhoneDisplay(client.telefono)}
+                      </td>
+
+                      {/* Correo */}
+                      <td style={{ padding: '14px 16px', fontSize: '12px', color: '#6e6764' }}>
+                        {client.correo || '—'}
+                      </td>
+
+                      {/* Marca en específico */}
+                      <td style={{ padding: '14px 16px', fontSize: '13px' }}>
+                        {client.visitaMarcaEspecifica && client.marca ? (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 10px',
+                              borderRadius: '9999px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              backgroundColor: '#fff5eb',
+                              color: '#ff8901',
+                            }}
+                          >
+                            Sí — {client.marca.nombre}
+                          </span>
+                        ) : (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '4px 10px',
+                              borderRadius: '9999px',
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              backgroundColor: '#f4f2f0',
+                              color: '#8e8784',
+                            }}
+                          >
+                            No — Sin preferencia
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Comentarios */}
+                      <td style={{ padding: '14px 16px', fontSize: '12px', color: '#6e6764', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: 'italic' }}>
+                        {client.observaciones ? `"${client.observaciones}"` : '—'}
+                      </td>
+
+                      {/* Acciones */}
+                      <td style={{ padding: '14px 18px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            onClick={() => setActive360Client(client)}
+                            title="Ver Ficha 360"
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '6px',
+                              border: '1px solid #eae7e5',
+                              background: '#ffffff',
+                              color: '#251f1d',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#faf9f8';
+                              e.currentTarget.style.borderColor = '#ff8901';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = '#ffffff';
+                              e.currentTarget.style.borderColor = '#eae7e5';
+                            }}
+                          >
+                            <EyeIcon size={14} />
+                          </button>
+
+                          {puedeEditar && (
+                            <button
+                              onClick={() => openEditModal(client)}
+                              title="Editar Cliente"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                border: '1px solid #eae7e5',
+                                background: '#ffffff',
+                                color: '#251f1d',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#faf9f8';
+                                e.currentTarget.style.borderColor = '#ff8901';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#ffffff';
+                                e.currentTarget.style.borderColor = '#eae7e5';
+                              }}
+                            >
+                              <EditIcon size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer de conteo */}
+        <div style={{ padding: '12px 18px', borderTop: '1px solid #eae7e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#8e8784' }}>
+          <span>Mostrando 1 - {filteredClients.length} de {allClients.length} clientes</span>
+          <span>Página 1 de 1</span>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          3. MODAL: AGREGAR / EDITAR CLIENTE (CON CHECKBOX DE MARCA)
+          ========================================================================= */}
+      {activeClientModal && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setActiveClientModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+        >
+          <div
+            className="modal-box animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '26px 30px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.25)',
+              border: '1px solid #eae7e5',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#251f1d' }}>
+                {activeClientModal.isEdit ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}
+              </h3>
+              <button
+                onClick={() => setActiveClientModal(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }}
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveClient} style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Nombre completo *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. Mariana Zepeda Gómez"
+                  style={inputStyle}
+                  value={formData.nombre}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                    Celular (10 dígitos) *
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="55 2345 6789"
+                    maxLength={10}
+                    style={inputStyle}
+                    value={formData.telefono}
+                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value.replace(/\D/g, '') })}
+                    required
+                  />
+                  <span style={{ fontSize: 10, color: '#8e8784', marginTop: 2, display: 'block' }}>
+                    Teléfono móvil a 10 dígitos sin espacios
+                  </span>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="mariana.zepeda@agencia.com"
+                    style={inputStyle}
+                    value={formData.correo}
+                    onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                  />
+                  <span style={{ fontSize: 10, color: '#8e8784', marginTop: 2, display: 'block' }}>
+                    Opcional para cotizaciones y solicitudes
+                  </span>
+                </div>
+              </div>
+
+              {/* CHECKBOX: ¿Visita una marca en específico? */}
+              <div style={{ background: '#faf9f8', padding: '12px 14px', borderRadius: '10px', border: '1px solid #f0edeb' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#251f1d' }}>
+                  <input
+                    type="checkbox"
+                    checked={formData.visitaMarcaEspecifica}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setFormData({
+                        ...formData,
+                        visitaMarcaEspecifica: checked,
+                        marcaId: checked ? (formData.marcaId || (marcas[0]?.id ? String(marcas[0].id) : '')) : '',
+                      });
+                    }}
+                    style={{ width: 18, height: 18, accentColor: '#ff8901', cursor: 'pointer' }}
+                  />
+                  <span>¿Le interesa / visita una marca en específico?</span>
+                </label>
+
+                {formData.visitaMarcaEspecifica && (
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #eae7e5' }}>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: '#6e6764', display: 'block', marginBottom: 4 }}>
+                      Seleccionar Marca de Interés *
+                    </label>
+                    <select
+                      style={inputStyle}
+                      value={formData.marcaId}
+                      onChange={(e) => setFormData({ ...formData, marcaId: e.target.value })}
+                      required
+                    >
+                      <option value="">Seleccionar marca…</option>
+                      {marcas.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Comentarios u observaciones
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Detalles sobre las necesidades del cliente, auto que busca o presupuesto..."
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                  value={formData.observaciones}
+                  onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveClientModal(null)}
+                  style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #d5d0ce', background: '#ffffff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating || isUpdating}
+                  style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: '#ff8901', color: '#251f1d', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  {activeClientModal.isEdit ? 'Guardar Cambios' : 'Registrar Cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          4. MODAL: FICHA 360 DEL CLIENTE
+          ========================================================================= */}
+      {active360Client && (() => {
+        const currentClient = allClients.find((c) => c.id === active360Client.id) || active360Client;
+        const clientDemos = allDemos.filter((d) => d.clienteId === currentClient.id);
+        const interestedVehicles = allVehicles.filter((v) => {
+          if (currentClient.visitaMarcaEspecifica && currentClient.marcaId) {
+            return v.marcaId === currentClient.marcaId;
+          }
+          return v.estatus === 'DISPONIBLE';
+        }).slice(0, 3);
+
+        return (
+          <div
+            className="modal-backdrop"
+            onClick={() => setActive360Client(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: 16,
+            }}
+          >
+            <div
+              className="modal-box animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                maxWidth: '820px',
+                width: '100%',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.35)',
+                border: '1px solid #eae7e5',
+                maxHeight: '92vh',
+                overflowY: 'auto',
+              }}
+            >
+              {/* Cabecera */}
+              <div style={{ padding: '20px 28px', borderBottom: '1px solid #f0edeb', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <span
+                    style={{
+                      width: '42px',
+                      height: '42px',
+                      borderRadius: '50%',
+                      backgroundColor: '#251f1d',
+                      color: '#ffffff',
+                      fontWeight: 800,
+                      fontSize: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {getInitials(currentClient.nombre)}
+                  </span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#251f1d' }}>
+                      {currentClient.nombre}
+                    </h3>
+                    <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#8e8784' }}>
+                      Cliente registrado el {formatDate(currentClient.createdAt || currentClient.fechaRegistro, 'long')}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActive360Client(null)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, display: 'flex' }}
+                >
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+
+              <div style={{ padding: '24px 28px' }}>
+                {/* Botones de acción rápida de la Ficha */}
+                <div className="ficha-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                  <button
+                    onClick={() => notify('Visita registrada en bitácora')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#ff8901',
+                      color: '#251f1d',
+                      border: 'none',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + Registrar visita hoy
+                  </button>
+                  <button
+                    onClick={() => {
+                      const nota = prompt('Agregar nota rápida para el cliente:');
+                      if (nota) notify('Nota agregada al expediente');
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#ffffff',
+                      color: '#251f1d',
+                      border: '1px solid #d5d0ce',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✏️ Agregar nota
+                  </button>
+                  <button
+                    onClick={() => notify('Módulo de vinculación de inventario')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#ffffff',
+                      color: '#251f1d',
+                      border: '1px solid #d5d0ce',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🚗 Vincular vehículo
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDemoClientId(currentClient.id);
+                      setIsDemoModalOpen(true);
+                    }}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#ffffff',
+                      color: '#251f1d',
+                      border: '1px solid #d5d0ce',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🌐 Programar prueba
+                  </button>
+                  <button
+                    onClick={() => notify('Crear solicitud de financiamiento')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#ffffff',
+                      color: '#251f1d',
+                      border: '1px solid #d5d0ce',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    📄 Crear solicitud
+                  </button>
+                  <button
+                    onClick={() => notify('Registrar venta en caja')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      backgroundColor: '#251f1d',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    💵 Registrar venta
+                  </button>
+                </div>
+
+                {/* Grid 2 Columnas de la Ficha 360 */}
+                <div className="ficha-360-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                  {/* Columna Izquierda: Información de Contacto, Comentarios, Vehículos */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', margin: '0 0 8px 0' }}>
+                        Información de Contacto
+                      </h4>
+                      <div style={{ background: '#faf9f8', borderRadius: '10px', padding: '14px', border: '1px solid #f0edeb', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div><strong style={{ color: '#8e8784' }}>Celular:</strong> <span style={{ fontWeight: 700, color: '#251f1d' }}>{formatPhoneDisplay(currentClient.telefono)}</span></div>
+                        <div><strong style={{ color: '#8e8784' }}>Correo:</strong> <span style={{ color: '#251f1d' }}>{currentClient.correo || 'No especificado'}</span></div>
+                        <div>
+                          <strong style={{ color: '#8e8784' }}>Marca de interés:</strong>{' '}
+                          {currentClient.visitaMarcaEspecifica && currentClient.marca ? (
+                            <span style={{ padding: '2px 8px', borderRadius: '6px', background: '#fff5eb', color: '#ff8901', fontWeight: 700, fontSize: '11px' }}>
+                              {currentClient.marca.nombre}
+                            </span>
+                          ) : (
+                            <span style={{ padding: '2px 8px', borderRadius: '6px', background: '#f4f2f0', color: '#8e8784', fontWeight: 600, fontSize: '11px' }}>
+                              Sin preferencia
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, color: '#251f1d' }}>
-                        <input
-                          type="checkbox"
-                          checked={editForm.visitaMarcaEspecifica}
-                          onChange={(e) => setEditForm({ ...editForm, visitaMarcaEspecifica: e.target.checked, marcaId: e.target.checked ? editForm.marcaId : '' })}
-                          style={{ accentColor: '#ff8901' }}
-                        />
-                        Busca una marca específica
-                      </label>
-                      {editForm.visitaMarcaEspecifica && (
-                        <select style={{ ...inputStyle, width: 'auto' }} value={editForm.marcaId} onChange={(e) => setEditForm({ ...editForm, marcaId: e.target.value })}>
-                          <option value="">Marca…</option>
-                          {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                        </select>
-                      )}
-                      <input style={{ ...inputStyle, flex: '1 1 220px' }} placeholder="Observaciones" value={editForm.observaciones} onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })} />
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn-action-icon" onClick={() => handleUpdate(c.id)} title="Guardar"><CheckIcon size={14} /></button>
-                        <button className="btn-action-icon" onClick={() => setEditingId(null)} title="Cancelar"><CloseIcon size={14} /></button>
+
+                    <div>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', margin: '0 0 8px 0' }}>
+                        Comentarios y Observaciones
+                      </h4>
+                      <div style={{ background: '#faf9f8', borderRadius: '10px', padding: '14px', border: '1px solid #f0edeb', fontSize: '12px', color: '#6e6764', fontStyle: 'italic', lineHeight: 1.4 }}>
+                        {currentClient.observaciones ? `"${currentClient.observaciones}"` : 'Sin comentarios registrados.'}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', margin: '0 0 8px 0' }}>
+                        Vehículos Sugeridos / Interés
+                      </h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {interestedVehicles.length === 0 ? (
+                          <div style={{ fontSize: 11, color: '#8e8784', fontStyle: 'italic', padding: 8 }}>
+                            Sin unidades vinculadas directamente.
+                          </div>
+                        ) : (
+                          interestedVehicles.map((v) => (
+                            <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderRadius: '8px', border: '1px solid #eae7e5', background: '#ffffff' }}>
+                              <div>
+                                <div style={{ fontSize: '12px', fontWeight: 800, color: '#251f1d' }}>
+                                  {v.marca?.nombre || ''} {v.nombre || v.modelo} {v.anio}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#8e8784' }}>
+                                  {v.precio ? formatCurrency(v.precio) : 'Precio a cotizar'}
+                                </div>
+                              </div>
+                              <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '9999px', background: '#dcfce7', color: '#16a34a' }}>
+                                {v.estatus.toLowerCase()}
+                              </span>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </div>
                   </div>
-                );
-              }
 
-              return (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 8, background: '#faf9f8', border: '1px solid #f0edeb' }}>
-                  <span style={{ width: 34, height: 34, borderRadius: '50%', background: '#ff8901', color: '#fff', fontWeight: 800, fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {getInitials(c.nombre)}
-                  </span>
-
-                  <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#251f1d' }}>{c.nombre}</div>
-                    <div style={{ fontSize: 11, color: '#8e8784', marginTop: 2 }}>
-                      {c.telefono} {c.correo && `· ${c.correo}`} · Alta: {formatDate(c.fechaRegistro, 'short')}
+                  {/* Columna Derecha: Historial, Pruebas, Solicitudes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {/* Historial de Visitas */}
+                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                        👤 Historial de Visitas (1)
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #ff8901', paddingLeft: '8px' }}>
+                        <div style={{ fontWeight: 700, color: '#251f1d' }}>
+                          📅 {formatDate(currentClient.createdAt || currentClient.fechaRegistro, 'long')}
+                        </div>
+                        <div>Registro de visita y alta en recepción.</div>
+                      </div>
                     </div>
-                    {c.observaciones && (
-                      <div style={{ fontSize: 11, color: '#6e6764', marginTop: 4, fontStyle: 'italic' }}>"{c.observaciones}"</div>
-                    )}
+
+                    {/* Pruebas de Manejo */}
+                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                        🌐 Pruebas de Manejo ({clientDemos.length})
+                      </div>
+                      {clientDemos.length === 0 ? (
+                        <div style={{ fontSize: '11px', color: '#8e8784' }}>No tiene pruebas de manejo agendadas.</div>
+                      ) : (
+                        clientDemos.map((d) => (
+                          <div key={d.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #0284c7', paddingLeft: '8px', marginBottom: 6 }}>
+                            <div style={{ fontWeight: 700, color: '#251f1d' }}>
+                              {d.vehiculo?.marca?.nombre} {d.vehiculo?.nombre} {d.vehiculo?.anio}
+                            </div>
+                            <div>{formatDate(d.fecha, 'long')} · Asesor: {d.usuario?.nombre}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Solicitudes */}
+                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                        📄 Solicitudes de Crédito / Compra (0)
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#8e8784' }}>Sin solicitudes de financiamiento registradas.</div>
+                    </div>
+
+                    {/* Enganches Recibidos */}
+                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                        💵 Enganches Recibidos en Caja (0)
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#8e8784' }}>No se han registrado pagos de enganche para este cliente.</div>
+                    </div>
+
+                    {/* Compras Realizadas */}
+                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                        🏷️ Compras Realizadas (0)
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#8e8784' }}>Aún no ha concretado compras en el outlet.</div>
+                    </div>
                   </div>
-
-                  {c.visitaMarcaEspecifica ? (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 9999, background: '#fff5eb', color: '#ff8901', border: '1px solid #ffd8b3', whiteSpace: 'nowrap' }}>
-                      Busca {c.marca?.nombre || 'marca específica'}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 9999, background: '#f0eceb', color: '#8e8784', whiteSpace: 'nowrap' }}>
-                      Sin preferencia
-                    </span>
-                  )}
-
-                  {puedeEditar && <button className="btn-action-icon" onClick={() => startEdit(c)} title="Editar"><EditIcon size={14} /></button>}
                 </div>
-              );
-            })}
-          </div>
-        )}
-        {data && <Pager page={data.page} totalPages={data.totalPages} total={data.total} onPageChange={setPage} />}
-      </div>
-    </div>
-  );
-}
 
-// ─── Pruebas de manejo ──────────────────────────────────────────────────────
-
-function emptyDemoForm() {
-  return { clienteId: '', vehiculoId: '', observaciones: '' };
-}
-
-function DemosTab() {
-  const notify = useNotify();
-  const { puede } = usePermiso();
-  const puedeCrear = puede('demo', 'crear');
-  const puedeEliminar = puede('demo', 'eliminar');
-  const [page, setPage] = useState(1);
-  const { data, isLoading } = useGetDemosQuery({ page, pageSize: PAGE_SIZE });
-  const demosPagina = data?.items ?? [];
-  // Sin pagination: dropdowns necesitan la lista completa de clientes y
-  // vehículos, no solo la página actual de demos.
-  const { data: clientes = [] } = useGetClientesQuery();
-  const { data: vehiculos = [] } = useGetVehiculosQuery();
-  const [createDemo, { isLoading: isCreating }] = useCreateDemoMutation();
-  const [deleteDemo] = useDeleteDemoMutation();
-
-  const [newForm, setNewForm] = useState(emptyDemoForm());
-
-  const reportError = async (promise, fallbackMessage) => {
-    try {
-      await promise.unwrap();
-      return true;
-    } catch (error) {
-      notify(error?.data?.error || fallbackMessage, 'error');
-      return false;
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!newForm.clienteId || !newForm.vehiculoId) {
-      notify('Cliente y vehículo son requeridos', 'error');
-      return;
-    }
-    const ok = await reportError(createDemo(newForm), 'No se pudo registrar la demo');
-    if (ok) {
-      setNewForm(emptyDemoForm());
-      notify('Prueba de manejo registrada');
-    }
-  };
-
-  const handleDelete = async (d) => {
-    if (!confirm(`¿Eliminar la demo de ${d.cliente?.nombre} con ${d.vehiculo?.nombre}?`)) return;
-    await reportError(deleteDemo(d.id), 'No se pudo eliminar la demo');
-  };
-
-  return (
-    <div className="card" style={{ padding: 24, borderRadius: 14, border: '1px solid #eae7e5', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
-      {puedeCrear && (
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid #f0edeb' }}>
-          <div style={{ flex: '1 1 200px' }}>
-            <select style={inputStyle} value={newForm.clienteId} onChange={(e) => setNewForm({ ...newForm, clienteId: e.target.value })}>
-              <option value="">Cliente…</option>
-              {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-            </select>
-          </div>
-          <div style={{ flex: '1 1 200px' }}>
-            <select style={inputStyle} value={newForm.vehiculoId} onChange={(e) => setNewForm({ ...newForm, vehiculoId: e.target.value })}>
-              <option value="">Vehículo…</option>
-              {vehiculos.map((v) => <option key={v.id} value={v.id}>{v.marca?.nombre} {v.nombre} {v.modelo}</option>)}
-            </select>
-          </div>
-          <div style={{ flex: '1 1 220px' }}><input style={inputStyle} placeholder="Observaciones (opcional)" value={newForm.observaciones} onChange={(e) => setNewForm({ ...newForm, observaciones: e.target.value })} /></div>
-          <button
-            onClick={handleCreate}
-            disabled={isCreating}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, backgroundColor: '#ff8901', color: '#251f1d', border: 'none', padding: '9px 16px', borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: isCreating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-          >
-            <PlusIcon size={13} /> Registrar demo
-          </button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <p style={{ fontSize: 12, color: '#8e8784' }}>Cargando…</p>
-      ) : demosPagina.length === 0 ? (
-        <p style={{ fontSize: 12, color: '#8e8784' }}>Sin pruebas de manejo registradas todavía.</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {demosPagina.map((d) => (
-            <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 14px', borderRadius: 8, background: '#faf9f8', border: '1px solid #f0edeb' }}>
-              <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#251f1d' }}>
-                  {d.cliente?.nombre} <span style={{ color: '#8e8784', fontWeight: 600 }}>probó</span> {d.vehiculo?.marca?.nombre} {d.vehiculo?.nombre} {d.vehiculo?.modelo}
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #f0edeb' }}>
+                  <button
+                    onClick={() => setActive360Client(null)}
+                    style={{ padding: '8px 18px', borderRadius: '8px', border: '1px solid #d5d0ce', background: '#ffffff', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Cerrar ficha
+                  </button>
                 </div>
-                <div style={{ fontSize: 11, color: '#8e8784' }}>
-                  {formatDate(d.fecha, 'long')} · Asesor: {d.usuario?.nombre}
-                </div>
-                {d.observaciones && <div style={{ fontSize: 11, color: '#6e6764', marginTop: 4, fontStyle: 'italic' }}>"{d.observaciones}"</div>}
               </div>
-              {puedeEliminar && <button className="btn-action-icon text-danger" onClick={() => handleDelete(d)} title="Eliminar"><TrashIcon size={14} /></button>}
             </div>
-          ))}
-        </div>
-      )}
-      {data && <Pager page={data.page} totalPages={data.totalPages} total={data.total} onPageChange={setPage} />}
-    </div>
-  );
-}
+          </div>
+        );
+      })()}
 
-export function ClientesView() {
-  const [subTab, setSubTab] = useState('directorio');
-  const { puede } = usePermiso();
-  const puedeCliente = puede('cliente', 'leer');
-  const puedeDemo = puede('demo', 'leer');
-
-  return (
-    <div>
-      <div style={{ display: 'flex', background: '#e8e6e5', padding: 4, borderRadius: 10, marginBottom: 20, width: 'fit-content' }}>
-        {puedeCliente && (
-          <button
-            onClick={() => setSubTab('directorio')}
-            style={{ padding: '9px 20px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subTab === 'directorio' ? '#ff8901' : 'transparent', color: subTab === 'directorio' ? '#251f1d' : '#6e6764', transition: 'all 0.2s' }}
-          >
-            <UsersIcon size={15} /> <span>Directorio</span>
-          </button>
-        )}
-        {puedeDemo && (
-          <button
-            onClick={() => setSubTab('demos')}
-            style={{ padding: '9px 20px', borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: subTab === 'demos' ? '#ff8901' : 'transparent', color: subTab === 'demos' ? '#251f1d' : '#6e6764', transition: 'all 0.2s' }}
-          >
-            <TestDriveIcon size={15} /> <span>Pruebas de manejo</span>
-          </button>
-        )}
-      </div>
-
-      {subTab === 'directorio' && puedeCliente ? <DirectorioTab /> : puedeDemo ? <DemosTab /> : <p style={{ fontSize: 12, color: '#8e8784' }}>No tienes permiso para ver esta sección.</p>}
+      {/* Modal de Programar Prueba de Manejo */}
+      <TestDriveModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+        defaultClientId={demoClientId}
+      />
     </div>
   );
 }

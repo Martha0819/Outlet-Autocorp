@@ -31,12 +31,24 @@ export function formatNumber(number) {
 
 export function formatDate(dateStr, format = 'short') {
   if (!dateStr) return '';
-  const date = new Date(dateStr + (dateStr.length === 10 ? 'T00:00:00' : ''));
-  if (isNaN(date.getTime())) return dateStr;
+  
+  let date;
+  const rawStr = typeof dateStr === 'string' ? dateStr : (dateStr instanceof Date ? dateStr.toISOString() : String(dateStr));
+  
+  // Si coincide con patrón YYYY-MM-DD (ej: 2026-11-20 o 2026-11-20T00:00:00.000Z),
+  // descomponer año, mes y día para evitar que la zona horaria (UTC-6) desplace el día hacia atrás.
+  if (/^\d{4}-\d{2}-\d{2}/.test(rawStr)) {
+    const [y, m, d] = rawStr.slice(0, 10).split('-').map(Number);
+    date = new Date(y, m - 1, d, 12, 0, 0);
+  } else {
+    date = new Date(dateStr);
+  }
+
+  if (isNaN(date.getTime())) return String(dateStr);
 
   if (format === 'short') {
     return new Intl.DateTimeFormat('es-MX', {
-      day: '2-digit',
+      day: 'numeric',
       month: 'short',
       year: 'numeric'
     }).format(date);

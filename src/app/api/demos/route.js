@@ -35,7 +35,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { clienteId, vehiculoId, fecha, observaciones } = body;
+  const { clienteId, vehiculoId, fecha, horario, usuarioId, estado, observaciones } = body;
 
   if (!clienteId || !vehiculoId) {
     return Response.json({ error: 'clienteId y vehiculoId son requeridos' }, { status: 400 });
@@ -48,13 +48,31 @@ export async function POST(request) {
     }
   }
 
+  let finalFecha = new Date();
+  if (fecha) {
+    const timePart = horario && /^\d{2}:\d{2}$/.test(horario) ? `${horario}:00` : '12:00:00';
+    finalFecha = new Date(`${fecha.slice(0, 10)}T${timePart}`);
+    if (isNaN(finalFecha.getTime())) finalFecha = new Date();
+  }
+
+  const assignedUserId = usuarioId && !isNaN(Number(usuarioId)) ? Number(usuarioId) : auth.usuario.id;
+
+  const notesArray = [];
+  if (estado && estado !== 'Programada') {
+    notesArray.push(`[Estado: ${estado}]`);
+  }
+  if (observaciones?.trim()) {
+    notesArray.push(observaciones.trim());
+  }
+  const finalNotes = notesArray.length > 0 ? notesArray.join(' ') : null;
+
   const demo = await prisma.demo.create({
     data: {
       clienteId: Number(clienteId),
       vehiculoId: Number(vehiculoId),
-      usuarioId: auth.usuario.id,
-      fecha: fecha ? new Date(fecha) : new Date(),
-      observaciones: observaciones?.trim() ? observaciones.trim() : null,
+      usuarioId: assignedUserId,
+      fecha: finalFecha,
+      observaciones: finalNotes,
     },
     include: {
       cliente: true,

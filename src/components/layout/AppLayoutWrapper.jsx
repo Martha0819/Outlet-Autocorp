@@ -14,6 +14,12 @@ export function AppLayoutWrapper({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const isLoginPage = pathname === '/login';
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  // Cerrar menú móvil al cambiar de ruta
+  React.useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   const dispatch = useAppDispatch();
   // Redux es memoria del navegador: nada la invalida sola si el token
@@ -59,9 +65,23 @@ export function AppLayoutWrapper({ children }) {
 
   return (
     <div className="app-layout">
-      <Sidebar />
+      {/* Fondo oscuro para cerrar menú lateral en celulares */}
+      {mobileMenuOpen && (
+        <div
+          className="sidebar-backdrop open"
+          onClick={() => setMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+            zIndex: 998,
+            backdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+      <Sidebar mobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)} />
       <div className="app-main-wrapper">
-        <AppHeader />
+        <AppHeader onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)} />
         <main className="app-content-area">{children}</main>
       </div>
     </div>
