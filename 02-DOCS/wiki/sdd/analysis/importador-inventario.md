@@ -13,9 +13,18 @@ topic: sdd
 
 ## Veredicto
 
-**GATE: BLOCKED** — 1 CRITICAL/HIGH, 0 CRITICAL puros, 1 HIGH, 2 MEDIUM, 1 LOW.
+**GATE: PASS** (re-corrido 2026-11-18, tras aplicar las correcciones) — 0 CRITICAL, 0 HIGH.
 
-Un solo hallazgo real bloquea: la spec dice que `km` es obligatorio, pero el plan (y el código ya existente de alta manual) lo trata como opcional. El resto son huecos pequeños, no contradicciones de fondo.
+Hallazgo original (ver abajo): la spec decía que `km` era obligatorio, pero el plan (y el código ya existente de alta manual) lo trata como opcional — corregido en la spec. Los dos MEDIUM (caso "todas las filas con error" sin prueba, bloques de interfaz faltantes) también se corrigieron en el plan/tareas. El LOW queda abierto a propósito, para decidirse en `implement`.
+
+### Estado de los hallazgos tras la corrección
+
+| # | Hallazgo | Estado |
+| --- | --- | --- |
+| 1 (HIGH) | `km` obligatorio en spec vs opcional en plan/código | **Corregido** — spec §What it must respect ya no lista `km`; `## Clarifications` registra el porqué. |
+| 2 (MEDIUM) | Caso "todas las filas con error" sin prueba | **Corregido** — añadido al done-check de T009. |
+| 3 (MEDIUM) | Faltan bloques `Interfaces` en T008/T011–T015 | **Corregido** — los 6 bloques añadidos al plan. |
+| 4 (LOW) | Candidatos de resolución sin definir orden/filtro | Abierto, diferido a `implement` (no bloquea). |
 
 ## Mapa de cobertura
 

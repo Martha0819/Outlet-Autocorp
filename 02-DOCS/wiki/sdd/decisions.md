@@ -31,3 +31,9 @@ Registro append-only de decisiones de alcance tomadas durante specify/clarify/pl
 - El proyecto no tenía ningún framework de pruebas instalado (sin jest/vitest/playwright, sin archivos `*.test.js` en el repo). Se añade **Vitest** como primera tarea (T001) porque es requisito para que cualquier done-check del plan sea ejecutable. Es una decisión de tooling, reversible, no de arquitectura.
 - 16 tareas (T001–T016), TDD por pares prueba→implementación donde aplica. Todas forecast en tier de riesgo 1 (`rsc risk`, clase `default`, porque `02-DOCS/wiki/sdd/config.yaml` todavía no existe).
 - Entrega sugerida: `ask-on-risk` — el volumen cabe en un PR, pero toca permisos y alta de inventario, así que conviene revisión humana antes de mezclar.
+
+## 2026-11-18 — importador-inventario (analyze → correcciones)
+
+- `analyze` encontró que la spec listaba `km` como campo obligatorio, contradiciendo el plan y el alta manual real (`km` opcional). Corregido en la spec (§What it must respect + `## Clarifications`).
+- Añadido el caso "todas las filas con error" al done-check de T009, que la spec ya describía (§Behaviour) pero ninguna tarea cubría explícitamente.
+- Añadidos bloques `Interfaces` (Consume/Produce, firmas exactas) a T008, T011, T012, T013, T014 y T015, para que un implementador con contexto aislado no tenga que adivinar los contratos entre tareas.

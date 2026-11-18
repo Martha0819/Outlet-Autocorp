@@ -187,7 +187,7 @@ ResumenImportacion:
 | T006 |  | Escribir pruebas que fallen para la clasificación de filas: match exacto normalizado → "lista"; sin match → "pendiente" con candidatos y **sin crear fila nueva de catálogo**; campo obligatorio faltante o inválido → "error" con motivo; VIN ya existente en BD → "error", vehículo existente sin cambios; unidad de negocio distinta a la del usuario no-administrador → "error" | `npm test -- resolucionCatalogo` falla por ausencia de implementación | T003 | AC2, AC3, AC4, AC5, spec §What it must respect (sin catálogo nuevo) | 1 |
 | T007 |  | Implementar la clasificación de filas (resolución de marca/unidad de negocio contra catálogo real + validación de campos + chequeo de VIN contra BD real) hasta que T006 pase | `npm test -- resolucionCatalogo` verde, corriendo contra BD/catálogo de prueba reales (no simulados) | T006 | AC2, AC3, AC4, AC5 | 1 |
 | T008 |  | Exponer `analizarArchivoImportacion` como endpoint HTTP protegido por `requirePermiso('vehiculo','crear')`, uniendo T003+T005+T007 | prueba de integración: `POST` al endpoint con permiso → `AnalisisImportacion` con la forma del plan §3; sin permiso → rechazado; no persiste nada (conteo de filas en BD sin cambio antes/después) | T003, T005, T007 | AC1, AC2, AC3, AC4, AC5, Global Constraint "permiso requerido" | 1 |
-| T009 |  | Escribir pruebas que fallen para `confirmarImportacion`: camino feliz crea los vehículos "importar" y genera bitácora por cada uno; una fila que falla en el momento de confirmar (p. ej. VIN que se volvió duplicado) no revierte las demás ya creadas en la misma corrida; el resumen devuelve los tres números exactos (importados / con error y motivo / resueltos manualmente) | `npm test -- confirmarImportacion` falla por ausencia de implementación | T007 | AC3, AC4, AC6, plan §3 invariante "no todo-o-nada" | 1 |
+| T009 |  | Escribir pruebas que fallen para `confirmarImportacion`: camino feliz crea los vehículos "importar" y genera bitácora por cada uno; una fila que falla en el momento de confirmar (p. ej. VIN que se volvió duplicado) no revierte las demás ya creadas en la misma corrida; el resumen devuelve los tres números exactos (importados / con error y motivo / resueltos manualmente); **con un lote donde todas las filas son "descartar" o fallan, el resumen responde con 0 importados y N con error, sin lanzar una excepción ni tratarlo como fallo del sistema** | `npm test -- confirmarImportacion` falla por ausencia de implementación | T007 | AC3, AC4, AC6, plan §3 invariante "no todo-o-nada", spec §Behaviour caso límite "todas las filas con error" | 1 |
 | T010 |  | Implementar `confirmarImportacion` (re-validación final + creación fila por fila + bitácora + resumen) hasta que T009 pase | `npm test -- confirmarImportacion` verde | T009 | AC3, AC4, AC6 | 1 |
 | T011 |  | Exponer `confirmarImportacion` como endpoint HTTP protegido por `requirePermiso('vehiculo','crear')` y por el límite de unidad de negocio del usuario (igual que `POST /api/vehiculos`) | prueba de integración: usuario no-administrador con una fila de otra unidad de negocio → esa fila aparece como error en el resumen; sus propias filas se importan | T010 | AC5, AC6, Global Constraint "límite por unidad de negocio" | 1 |
 | T012 | [P] | Construir la pantalla de importación: subir archivo, ver/editar el mapeo sugerido, resolver manualmente las filas pendientes (elegir marca/unidad de negocio o descartar), confirmar | prueba de componente: con un `AnalisisImportacion` de ejemplo (forma del plan §3), el mapeo se puede editar, una fila pendiente se puede resolver eligiendo un candidato, y "confirmar" envía exactamente las `FilaDecidida` esperadas | T008 | AC1, AC2 | 1 |
@@ -195,6 +195,27 @@ ResumenImportacion:
 | T014 |  | Prueba end-to-end del camino feliz: subir un CSV válido con cabeceras no estándar → mapear → confirmar → ver resumen | prueba e2e en navegador: el usuario sube el archivo, corrige una cabecera, confirma, y el resumen + el inventario reflejan los vehículos creados | T012, T013 | AC1, AC2, AC6 | 1 |
 | T015 |  | Prueba end-to-end del camino mixto: archivo con filas válidas, una fila con VIN duplicado y una fila con campo obligatorio faltante | prueba e2e: tras confirmar, las filas válidas quedan en el inventario, y el resumen muestra exactamente las dos filas con error con su motivo correcto | T012, T013 | AC3, AC4, AC6 | 1 |
 | T016 |  | Cierre: todos los done-checks pasan + verificación completa | `npm test` completo verde; `npm run build` sin errores; cada fila de esta tabla con su done-check comprobado | T001–T015 | todas las AC | — |
+
+**T008 — Interfaces**
+- Consume: `parsearArchivo(archivo) -> { cabeceras, filasCrudas } | FormatoNoSoportado | ArchivoVacio` (T003); `sugerirMapeo(cabeceras) -> mapeoSugerido` (T005); `clasificarFilas(filasCrudas, mapeo, usuarioActual) -> FilaAnalizada[]` (T007).
+- Produce: `POST /api/importador-vehiculos/analizar` → `200 { mapeoSugerido, filas: FilaAnalizada[] }` (forma exacta: plan §3 `AnalisisImportacion`) | `400 FormatoNoSoportado` | `400 ArchivoVacio` | `403` sin permiso `vehiculo.crear`.
+
+**T011 — Interfaces**
+- Consume: `confirmarFilas(mapeoFinal, filasDecididas: FilaDecidida[], usuarioActual) -> ResumenImportacion` (T010).
+- Produce: `POST /api/importador-vehiculos/confirmar` → `200 ResumenImportacion` (forma exacta: plan §3) | `403` sin permiso o fuera de unidad de negocio.
+
+**T012 — Interfaces**
+- Consume: respuesta de `POST /api/importador-vehiculos/analizar` (forma `AnalisisImportacion`, producida por T008); cada `FilaAnalizada` trae `estado`, `motivoError?`, `candidatosResolucion?` (plan §3).
+- Produce: al confirmar, un `POST` a `/api/importador-vehiculos/confirmar` con body `{ mapeoFinal, filasDecididas: FilaDecidida[] }` (forma exacta: plan §3) — consumido por T011.
+
+**T013 — Interfaces**
+- Consume: respuesta de `POST /api/importador-vehiculos/confirmar` (forma `ResumenImportacion`: `{ importados, conError, resueltosManualmente }`, producida por T011).
+
+**T014 — Interfaces**
+- Consume: la pantalla de T012 (subida + mapeo editable + confirmación) y la pantalla de T013 (resumen), ya integradas con T008/T011 en ejecución real (no simuladas).
+
+**T015 — Interfaces**
+- Consume: igual que T014, con un archivo de prueba que mezcla una fila válida, una con VIN duplicado (requiere un `Vehiculo` ya creado en la BD de prueba con ese VIN) y una sin `marcaId`.
 
 - Candidatos a paralelizar: T012 puede construirse en paralelo con T009–T011 una vez cerrado T008 (archivos disjuntos: componente cliente vs. lógica/endpoint de confirmación). T013 queda bloqueado por T011 y para entonces no queda nada más pendiente con quien competir, así que no necesita la marca `[P]`.
 - Nadie en T002–T011 está marcado `[P]`: cada implementación comparte el mismo archivo/módulo que su prueba inmediatamente anterior, así que son estrictamente secuenciales por diseño TDD.

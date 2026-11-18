@@ -18,4 +18,4 @@
 
 | Análisis | Veredicto | Qué cubre |
 |------|--------|-----------|
-| [importador-inventario](sdd/analysis/importador-inventario.md) | GATE: BLOCKED (1 HIGH) | Cruce spec/plan/tasks: campo `km` listado como obligatorio en la spec pero opcional en plan/código real. | Dos endpoints (analizar / confirmar) + pantalla de revisión; sin estado de servidor entre pasos; sin migración de datos. |
+| [importador-inventario](sdd/analysis/importador-inventario.md) | GATE: PASS | Cruce spec/plan/tasks; 1 HIGH (campo `km`) y 2 MEDIUM corregidos tras el primer corrido. | Dos endpoints (analizar / confirmar) + pantalla de revisión; sin estado de servidor entre pasos; sin migración de datos. |

@@ -54,7 +54,7 @@ Al terminar una importación, el usuario ve un resumen con tres números: cuánt
 *Referencia visual (pantalla de revisión y resumen final) pendiente de boceto aprobado por el usuario — ver Points to clarify.*
 
 ## What it must respect
-- Los mismos campos obligatorios que ya exige el alta manual de un vehículo (modelo, descripción/nombre, año, km, transmisión, condición, marca, unidad de negocio) deben estar presentes y válidos para que una fila se importe; si falta alguno, esa fila es una fila con error, no una fila importada a medias.
+- Los mismos campos obligatorios que ya exige el alta manual de un vehículo (modelo, descripción/nombre, año, transmisión, condición, marca, unidad de negocio) deben estar presentes y válidos para que una fila se importe; si falta alguno, esa fila es una fila con error, no una fila importada a medias. Km, VIN y precio son opcionales, igual que en el alta manual.
 - Toda marca y unidad de negocio de un vehículo importado debe corresponder a una entrada que ya existe en el catálogo — nunca se crea una marca o unidad de negocio nueva como efecto secundario de una importación.
 - Un VIN duplicado contra el inventario ya existente nunca sobrescribe el vehículo existente; esa fila se trata como fila con error.
 - El límite de acceso por unidad de negocio que ya aplica al alta manual (un no-administrador solo opera dentro de su propia unidad de negocio) aplica igual a cada fila importada.
@@ -92,6 +92,9 @@ Para cada criterio de aceptación de abajo, una comprobación de extremo a extre
 - **2026-11-17** — Q: ¿qué formatos de archivo acepta el importador, y hay un límite de filas? → Decisión: CSV y Excel (.xlsx) únicamente, sin límite estricto de filas por ahora. *Por qué:* son los dos formatos que entregan dealers/proveedores en la práctica; un límite sin datos reales de volumen sería arbitrario. Se reflejó en *Non-goals*, *Behaviour* (camino de error de formato no soportado) y un nuevo criterio de aceptación.
 - **2026-11-17** — Área "significado distinto del mismo campo entre proveedores" (p. ej. "modelo" como año-modelo) → Resuelta sin necesidad de regla nueva: el mecanismo de mapeo de cabeceras editable, ya descrito en *Behaviour*, cubre cualquier columna ambigua porque el usuario la corrige fila por fila antes de confirmar. No generó cambio en la spec.
 - **2026-11-17** — Punto "¿quién aprueba la referencia visual de la pantalla de revisión/resumen?" → Resuelto como proceso: se aprueba un boceto concreto en la fase `plan`/implementación, no en esta spec (la spec fija solo el contrato de comportamiento). Registrado como *suposición tomada* en *Points to clarify*.
+
+## Clarifications (continuación)
+- **2026-11-18** — `analyze` detectó que §What it must respect listaba `km` como campo obligatorio, contradiciendo el plan y el alta manual real (`src/app/api/vehiculos/route.js`), donde `km` es opcional (se guarda como 0 si falta). → Corregido: `km` (junto con VIN y precio) queda explícitamente opcional, igual que en el alta manual.
 
 ## Revisions
 - 2026-11-17 — Primera versión. Dirección A (importador asistido con revisión previa) y las 4 recomendaciones de resolución de catálogo, permisos, VIN duplicado e importación parcial, aprobadas por el usuario en el chat previo a escribir este documento.
