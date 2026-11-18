@@ -12,7 +12,13 @@
 
 | Plan | Estado | Qué cubre |
 |------|--------|-----------|
-| [importador-inventario](sdd/plans/importador-inventario.md) | tasks listas |
+| [importador-inventario](sdd/plans/importador-inventario.md) | implementado (T001–T016) |
+
+## sdd/progress
+
+| Progreso | Qué cubre |
+|------|-----------|
+| [importador-inventario](sdd/progress/importador-inventario.md) | Bitácora append-only de las 16 tareas implementadas (red/green, hallazgos, decisiones). |
 
 ## sdd/analysis
 
