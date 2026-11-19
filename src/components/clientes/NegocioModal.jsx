@@ -6,6 +6,7 @@ import { useGetCatalogoQuery } from '@/store/features/catalogos/catalogoApiSlice
 import { useGetVehiculosQuery } from '@/store/features/vehiculos/vehiculoApiSlice';
 import { useCreateNegocioMutation, useUpdateNegocioMutation } from '@/store/features/negocios/negocioApiSlice';
 import { CloseIcon, FileTextIcon, DollarIcon } from '@/components/ui/Icons';
+import { formatCurrency } from '@/lib/utils';
 
 const inputStyle = {
   width: '100%',
@@ -16,6 +17,7 @@ const inputStyle = {
   backgroundColor: '#ffffff',
   color: '#251f1d',
   outline: 'none',
+  boxSizing: 'border-box',
 };
 
 export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', negocioExistente = null, onSuccess = null }) {
@@ -30,9 +32,14 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     if (!vehiculosData) return [];
     return Array.isArray(vehiculosData) ? vehiculosData : (vehiculosData.items || []);
   }, [vehiculosData]);
+
+  // Se muestran las unidades de inventario. Si el cliente tiene preferencia de marca, se ordenan primero los de su marca.
   const vehiculosDisponibles = React.useMemo(() => {
+    if (!vehiculos.length) return [];
     if (cliente?.visitaMarcaEspecifica && cliente?.marcaId) {
-      return vehiculos.filter((v) => v.marcaId === cliente.marcaId);
+      const deSuMarca = vehiculos.filter((v) => v.marcaId === cliente.marcaId);
+      const otras = vehiculos.filter((v) => v.marcaId !== cliente.marcaId);
+      return [...deSuMarca, ...otras];
     }
     return vehiculos;
   }, [vehiculos, cliente]);
@@ -48,41 +55,57 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     vehiculoId: '',
     observaciones: '',
     totalUnidad: '',
-    dioEnganche: false,
+    folio: '',
     enganche: '',
   });
 
+  const esVenta = modo === 'venta';
+  const esEnganche = modo === 'enganche';
+  const esSolicitud = modo === 'solicitud';
+
   useEffect(() => {
     if (!isOpen) return;
+
+    // Buscar etapa recomendada según el modo
+    let defaultEtapaId = etapas[0]?.id ? String(etapas[0].id) : '';
+    if (esVenta) {
+      const etapaVenta = etapas.find((e) => /venta|factura/i.test(e.nombre));
+      if (etapaVenta) defaultEtapaId = String(etapaVenta.id);
+    } else if (esEnganche) {
+      const etapaEnganche = etapas.find((e) => /apartado|enganche/i.test(e.nombre));
+      if (etapaEnganche) defaultEtapaId = String(etapaEnganche.id);
+    } else if (esSolicitud) {
+      const etapaSol = etapas.find((e) => /solicitud|prospecci/i.test(e.nombre));
+      if (etapaSol) defaultEtapaId = String(etapaSol.id);
+    }
+
     if (negocioExistente) {
       setFormData({
-        lineaNegocioId: negocioExistente.lineaNegocioId ? String(negocioExistente.lineaNegocioId) : '',
-        etapaId: negocioExistente.etapaId ? String(negocioExistente.etapaId) : '',
+        lineaNegocioId: negocioExistente.lineaNegocioId ? String(negocioExistente.lineaNegocioId) : (lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : ''),
+        etapaId: negocioExistente.etapaId ? String(negocioExistente.etapaId) : defaultEtapaId,
         tipoSeguimientoId: negocioExistente.tipoSeguimientoId ? String(negocioExistente.tipoSeguimientoId) : '',
         vehiculoId: negocioExistente.vehiculoId ? String(negocioExistente.vehiculoId) : '',
         observaciones: negocioExistente.observaciones || '',
         totalUnidad: negocioExistente.totalUnidad != null ? String(negocioExistente.totalUnidad) : '',
-        dioEnganche: Boolean(negocioExistente.dioEnganche),
+        folio: negocioExistente.folio || '',
         enganche: negocioExistente.enganche != null ? String(negocioExistente.enganche) : '',
       });
     } else {
       setFormData({
         lineaNegocioId: lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : '',
-        etapaId: etapas[0]?.id ? String(etapas[0].id) : '',
+        etapaId: defaultEtapaId,
         tipoSeguimientoId: '',
         vehiculoId: '',
         observaciones: '',
         totalUnidad: '',
-        dioEnganche: false,
+        folio: '',
         enganche: '',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, negocioExistente, lineasNegocio, etapas]);
+  }, [isOpen, modo, negocioExistente, lineasNegocio, etapas]);
 
   if (!isOpen) return null;
-
-  const esVenta = modo === 'venta';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,9 +114,31 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       notify('Selecciona línea de negocio y etapa.', 'error');
       return;
     }
-    if (formData.dioEnganche && !(Number(formData.enganche) > 0)) {
-      notify('Si marcaste enganche recibido, captura un monto mayor a 0.', 'error');
-      return;
+
+    if (esVenta) {
+      if (!formData.vehiculoId) {
+        notify('Selecciona la unidad de inventario vendida.', 'error');
+        return;
+      }
+      if (!formData.folio.trim()) {
+        notify('Para facturar / registrar la venta es necesario ingresar el folio.', 'error');
+        return;
+      }
+      if (!(Number(formData.totalUnidad) > 0)) {
+        notify('Ingresa el monto total de la venta.', 'error');
+        return;
+      }
+    }
+
+    if (esEnganche) {
+      if (!formData.vehiculoId) {
+        notify('Selecciona la unidad de inventario a apartar con el enganche.', 'error');
+        return;
+      }
+      if (!(Number(formData.enganche) > 0)) {
+        notify('Ingresa un monto de enganche mayor a 0.', 'error');
+        return;
+      }
     }
 
     const payload = {
@@ -101,19 +146,20 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       etapaId: Number(formData.etapaId),
       tipoSeguimientoId: formData.tipoSeguimientoId ? Number(formData.tipoSeguimientoId) : null,
       vehiculoId: formData.vehiculoId ? Number(formData.vehiculoId) : null,
+      folio: formData.folio?.trim() || null,
       observaciones: formData.observaciones,
-      dioEnganche: formData.dioEnganche,
-      enganche: formData.dioEnganche ? Number(formData.enganche) : null,
+      dioEnganche: esEnganche,
+      enganche: esEnganche ? Number(formData.enganche) : null,
       totalUnidad: esVenta && formData.totalUnidad !== '' ? Number(formData.totalUnidad) : (negocioExistente ? negocioExistente.totalUnidad : null),
     };
 
     try {
       if (negocioExistente) {
         await updateNegocio({ id: negocioExistente.id, data: payload }).unwrap();
-        notify(esVenta ? 'Venta registrada correctamente' : 'Negocio actualizado correctamente');
+        notify(esVenta ? 'Venta registrada correctamente' : (esEnganche ? 'Enganche registrado correctamente' : 'Negocio actualizado correctamente'));
       } else {
         await createNegocio({ clienteId: cliente.id, ...payload }).unwrap();
-        notify(esVenta ? 'Venta registrada correctamente' : 'Solicitud registrada correctamente');
+        notify(esVenta ? 'Venta registrada correctamente' : (esEnganche ? 'Enganche registrado correctamente' : 'Solicitud registrada correctamente'));
       }
       if (onSuccess) onSuccess();
       onClose();
@@ -150,30 +196,31 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
           border: '1px solid #eae7e5',
           maxHeight: '90vh',
           overflowY: 'auto',
+          fontFamily: "'Montserrat', sans-serif",
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #f2efed', paddingBottom: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
-                width: '36px',
-                height: '36px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '8px',
-                backgroundColor: esVenta ? '#251f1d' : '#fff5eb',
-                color: esVenta ? '#ffffff' : '#ff8901',
+                backgroundColor: esVenta ? '#251f1d' : (esEnganche ? '#dcfce7' : '#fff5eb'),
+                color: esVenta ? '#ffffff' : (esEnganche ? '#16a34a' : '#ff8901'),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              {esVenta ? <DollarIcon size={20} /> : <FileTextIcon size={20} />}
+              {esVenta ? <DollarIcon size={20} /> : (esEnganche ? <DollarIcon size={20} /> : <FileTextIcon size={20} />)}
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#251f1d' }}>
-                {esVenta ? 'Registrar Venta' : 'Crear Solicitud'}
+                {esVenta ? '💵 Registrar Venta' : (esEnganche ? '💰 Registrar Enganche' : '📄 Crear Solicitud')}
               </h3>
               <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#8e8784' }}>
-                {cliente?.nombre}
+                Cliente: <strong style={{ color: '#251f1d' }}>{cliente?.nombre}</strong>
               </p>
             </div>
           </div>
@@ -183,6 +230,40 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Vehículo de inventario (mismo formato que prueba de manejo) */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+              {esVenta ? 'Vehículo a facturar / vender *' : (esEnganche ? 'Vehículo a apartar *' : 'Vehículo de interés')}
+            </label>
+            {vehiculos.length === 0 ? (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#f3f4f6', border: '1px solid #e5e7eb', fontSize: '12px', color: '#4b5563' }}>
+                Aún no hay vehículos registrados en inventario.
+              </div>
+            ) : (
+              <select
+                value={formData.vehiculoId}
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const v = vehiculos.find((item) => String(item.id) === String(selectedId));
+                  setFormData((prev) => ({
+                    ...prev,
+                    vehiculoId: selectedId,
+                    totalUnidad: esVenta && v?.precioLista ? String(v.precioLista) : prev.totalUnidad,
+                  }));
+                }}
+                required={esVenta || esEnganche}
+                style={inputStyle}
+              >
+                <option value="">Seleccionar vehículo...</option>
+                {vehiculos.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.marca?.nombre || ''} {v.nombre} {v.anio} — {formatCurrency(v.precioLista || 0)} [{v.estatus}]
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           <div className="form-row-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
               <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
@@ -190,7 +271,7 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
               </label>
               {lineasNegocio.length === 0 ? (
                 <div style={{ padding: '8px 10px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, color: '#b45309' }}>
-                  Sin líneas de negocio. Da de alta una en Catálogos.
+                  Sin líneas de negocio.
                 </div>
               ) : (
                 <select value={formData.lineaNegocioId} onChange={(e) => setFormData({ ...formData, lineaNegocioId: e.target.value })} required style={inputStyle}>
@@ -204,11 +285,11 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
 
             <div>
               <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Etapa *
+                Etapa del proceso *
               </label>
               {etapas.length === 0 ? (
                 <div style={{ padding: '8px 10px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, color: '#b45309' }}>
-                  Sin etapas. Da de alta una en Catálogos.
+                  Sin etapas.
                 </div>
               ) : (
                 <select value={formData.etapaId} onChange={(e) => setFormData({ ...formData, etapaId: e.target.value })} required style={inputStyle}>
@@ -221,7 +302,92 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
             </div>
           </div>
 
-          <div className="form-row-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          {/* Sección exclusiva de VENTA */}
+          {esVenta && (
+            <div style={{ background: '#faf9f8', padding: '14px 16px', borderRadius: '10px', border: '1px solid #f0edeb' }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+                  Folio de factura / venta <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. F-10294"
+                  value={formData.folio}
+                  onChange={(e) => setFormData({ ...formData, folio: e.target.value })}
+                  required
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+                  Total de la venta <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.totalUnidad}
+                  onChange={(e) => setFormData({ ...formData, totalUnidad: e.target.value })}
+                  required
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Sección exclusiva de ENGANCHE */}
+          {esEnganche && (
+            <div style={{ background: '#f0fdf4', padding: '14px 16px', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#166534', display: 'block', marginBottom: '5px' }}>
+                  Monto del enganche recibido <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.enganche}
+                  onChange={(e) => setFormData({ ...formData, enganche: e.target.value })}
+                  required
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#166534', display: 'block', marginBottom: '5px' }}>
+                  Folio o recibo de caja (opcional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ej. REC-4091"
+                  value={formData.folio}
+                  onChange={(e) => setFormData({ ...formData, folio: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Folio opcional para Solicitud */}
+          {esSolicitud && (
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+                Folio de solicitud (opcional)
+              </label>
+              <input
+                type="text"
+                placeholder="Ej. SOL-2041"
+                value={formData.folio}
+                onChange={(e) => setFormData({ ...formData, folio: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+          )}
+
+          <div className="form-row-2col" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
             <div>
               <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
                 Tipo de seguimiento
@@ -233,64 +399,7 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
                 ))}
               </select>
             </div>
-
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Vehículo de interés
-              </label>
-              <select value={formData.vehiculoId} onChange={(e) => setFormData({ ...formData, vehiculoId: e.target.value })} style={inputStyle}>
-                <option value="">Sin vincular</option>
-                {vehiculosDisponibles.map((v) => (
-                  <option key={v.id} value={v.id}>{v.marca?.nombre || ''} {v.nombre || v.modelo} {v.anio}</option>
-                ))}
-              </select>
-            </div>
           </div>
-
-          {esVenta && (
-            <div style={{ background: '#faf9f8', padding: '12px 14px', borderRadius: '10px', border: '1px solid #f0edeb' }}>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Total de la unidad
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.totalUnidad}
-                onChange={(e) => setFormData({ ...formData, totalUnidad: e.target.value })}
-                style={{ ...inputStyle, marginBottom: 10 }}
-              />
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#251f1d' }}>
-                <input
-                  type="checkbox"
-                  checked={formData.dioEnganche}
-                  onChange={(e) => setFormData({ ...formData, dioEnganche: e.target.checked, enganche: e.target.checked ? formData.enganche : '' })}
-                  style={{ width: 18, height: 18, accentColor: '#ff8901', cursor: 'pointer' }}
-                />
-                <span>¿Recibió enganche?</span>
-              </label>
-
-              {formData.dioEnganche && (
-                <div style={{ marginTop: 10 }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#6e6764', display: 'block', marginBottom: '4px' }}>
-                    Monto del enganche *
-                  </label>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.enganche}
-                    onChange={(e) => setFormData({ ...formData, enganche: e.target.value })}
-                    required
-                    style={inputStyle}
-                  />
-                </div>
-              )}
-            </div>
-          )}
 
           <div>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
@@ -317,18 +426,20 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
               type="submit"
               disabled={isSubmitting}
               style={{
-                padding: '9px 20px',
+                padding: '9px 18px',
                 borderRadius: '8px',
                 border: 'none',
-                backgroundColor: esVenta ? '#251f1d' : '#ff8901',
-                color: esVenta ? '#ffffff' : '#251f1d',
+                backgroundColor: esVenta ? '#251f1d' : (esEnganche ? '#16a34a' : '#ff8901'),
+                color: '#ffffff',
                 fontSize: '13px',
                 fontWeight: 800,
-                cursor: 'pointer',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
                 opacity: isSubmitting ? 0.7 : 1,
               }}
             >
-              {isSubmitting ? 'Guardando…' : (esVenta ? 'Registrar Venta' : 'Guardar Solicitud')}
+              {isSubmitting
+                ? 'Guardando…'
+                : (esVenta ? 'Guardar Venta' : (esEnganche ? 'Guardar Enganche' : 'Guardar Solicitud'))}
             </button>
           </div>
         </form>

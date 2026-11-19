@@ -71,6 +71,9 @@ export function ClientesView() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [demoClientId, setDemoClientId] = useState(null);
   const [negocioModal, setNegocioModal] = useState(null); // { cliente, modo: 'solicitud'|'venta', negocioExistente }
+  const [notaModalClient, setNotaModalClient] = useState(null);
+  const [notaTexto, setNotaTexto] = useState('');
+  const [isSavingNota, setIsSavingNota] = useState(false);
 
   // Formulario de Cliente (Alta / Edición)
   const [formData, setFormData] = useState({
@@ -110,6 +113,44 @@ export function ClientesView() {
 
   const [createCliente, { isLoading: isCreating }] = useCreateClienteMutation();
   const [updateCliente, { isLoading: isUpdating }] = useUpdateClienteMutation();
+
+  const handleGuardarNota = async (e) => {
+    if (e) e.preventDefault();
+    if (!notaTexto.trim()) {
+      notify('Por favor escribe el contenido de la nota.', 'error');
+      return;
+    }
+    if (!notaModalClient) return;
+
+    setIsSavingNota(true);
+    try {
+      const ahora = new Date();
+      const fechaHora = ahora.toLocaleString('es-MX', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      const entradaNueva = `[${fechaHora}]: ${notaTexto.trim()}`;
+      const observacionesActualizadas = notaModalClient.observaciones
+        ? `${notaModalClient.observaciones}\n${entradaNueva}`
+        : entradaNueva;
+
+      await updateCliente({
+        id: notaModalClient.id,
+        data: { observaciones: observacionesActualizadas },
+      }).unwrap();
+
+      notify('Nota agregada al expediente correctamente');
+      setNotaModalClient(null);
+      setNotaTexto('');
+    } catch (err) {
+      notify(err?.data?.error || 'No se pudo guardar la nota', 'error');
+    } finally {
+      setIsSavingNota(false);
+    }
+  };
 
   // Filtrado de clientes
   const filteredClients = useMemo(() => {
@@ -814,27 +855,9 @@ export function ClientesView() {
                 {/* Botones de acción rápida de la Ficha */}
                 <div className="ficha-actions-bar" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
                   <button
-                    onClick={() => notify('Visita registrada en bitácora')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#ff8901',
-                      color: '#251f1d',
-                      border: 'none',
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    + Registrar visita hoy
-                  </button>
-                  <button
                     onClick={() => {
-                      const nota = prompt('Agregar nota rápida para el cliente:');
-                      if (nota) notify('Nota agregada al expediente');
+                      setNotaModalClient(currentClient);
+                      setNotaTexto('');
                     }}
                     style={{
                       display: 'inline-flex',
@@ -851,24 +874,6 @@ export function ClientesView() {
                     }}
                   >
                     ✏️ Agregar nota
-                  </button>
-                  <button
-                    onClick={() => notify('Módulo de vinculación de inventario')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#ffffff',
-                      color: '#251f1d',
-                      border: '1px solid #d5d0ce',
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    🚗 Vincular vehículo
                   </button>
                   <button
                     onClick={() => {
@@ -909,6 +914,26 @@ export function ClientesView() {
                       }}
                     >
                       📄 Crear solicitud
+                    </button>
+                  )}
+                  {(puedeCrearNegocio || puedeEditarNegocio) && (
+                    <button
+                      onClick={() => setNegocioModal({ cliente: currentClient, modo: 'enganche', negocioExistente: null })}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: '#16a34a',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💰 Registrar enganche
                     </button>
                   )}
                   {(puedeCrearNegocio || puedeEditarNegocio) && (
@@ -976,8 +1001,8 @@ export function ClientesView() {
                       <h4 style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', margin: '0 0 8px 0' }}>
                         Comentarios y Observaciones
                       </h4>
-                      <div style={{ background: '#faf9f8', borderRadius: '10px', padding: '14px', border: '1px solid #f0edeb', fontSize: '12px', color: '#6e6764', fontStyle: 'italic', lineHeight: 1.4 }}>
-                        {currentClient.observaciones ? `"${currentClient.observaciones}"` : 'Sin comentarios registrados.'}
+                      <div style={{ background: '#faf9f8', borderRadius: '10px', padding: '14px', border: '1px solid #f0edeb', fontSize: '12px', color: '#6e6764', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {currentClient.observaciones || 'Sin comentarios registrados.'}
                       </div>
                     </div>
 
@@ -1060,6 +1085,11 @@ export function ClientesView() {
                               <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #ff8901', paddingLeft: '8px', marginBottom: 6 }}>
                                 <div style={{ fontWeight: 700, color: '#251f1d' }}>
                                   {n.lineaNegocio?.nombre} · {n.etapa?.nombre}
+                                  {n.folio && (
+                                    <span style={{ marginLeft: 6, background: '#fff5eb', color: '#ff8901', padding: '1px 6px', borderRadius: 4, fontWeight: 800, fontSize: '10px' }}>
+                                      Folio: {n.folio}
+                                    </span>
+                                  )}
                                 </div>
                                 <div>{formatDate(n.fecha, 'long')} · Asesor: {n.usuario?.nombre}</div>
                               </div>
@@ -1082,8 +1112,20 @@ export function ClientesView() {
                           ) : (
                             engaches.map((n) => (
                               <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #16a34a', paddingLeft: '8px', marginBottom: 6 }}>
-                                <div style={{ fontWeight: 700, color: '#251f1d' }}>{formatCurrency(n.enganche)}</div>
-                                <div>{formatDate(n.fecha, 'long')}</div>
+                                <div style={{ fontWeight: 700, color: '#251f1d' }}>
+                                  {formatCurrency(n.enganche)}
+                                  {n.vehiculo && (
+                                    <span style={{ fontWeight: 600, color: '#6e6764', marginLeft: 6 }}>
+                                      · {n.vehiculo.marca?.nombre} {n.vehiculo.nombre} {n.vehiculo.anio}
+                                    </span>
+                                  )}
+                                  {n.folio && (
+                                    <span style={{ marginLeft: 6, background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0', padding: '1px 6px', borderRadius: 4, fontWeight: 800, fontSize: '10px' }}>
+                                      Recibo: {n.folio}
+                                    </span>
+                                  )}
+                                </div>
+                                <div>{formatDate(n.fecha, 'long')} · Asesor: {n.usuario?.nombre}</div>
                               </div>
                             ))
                           )}
@@ -1106,6 +1148,11 @@ export function ClientesView() {
                               <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #251f1d', paddingLeft: '8px', marginBottom: 6 }}>
                                 <div style={{ fontWeight: 700, color: '#251f1d' }}>
                                   {n.vehiculo ? `${n.vehiculo.marca?.nombre || ''} ${n.vehiculo.nombre} ${n.vehiculo.anio}` : 'Unidad sin vincular'} · {formatCurrency(n.totalUnidad)}
+                                  {n.folio && (
+                                    <span style={{ marginLeft: 6, background: '#f4f2f0', color: '#251f1d', border: '1px solid #d5d0ce', padding: '1px 6px', borderRadius: 4, fontWeight: 800, fontSize: '10px' }}>
+                                      Folio: {n.folio}
+                                    </span>
+                                  )}
                                 </div>
                                 <div>{formatDate(n.fecha, 'long')}</div>
                               </div>
@@ -1146,6 +1193,159 @@ export function ClientesView() {
         modo={negocioModal?.modo}
         negocioExistente={negocioModal?.negocioExistente}
       />
+
+      {/* Modal Elegante para Agregar Nota */}
+      {notaModalClient && (
+        <div
+          className="modal-backdrop animate-fade-in"
+          onClick={() => {
+            if (!isSavingNota) setNotaModalClient(null);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '16px',
+          }}
+        >
+          <div
+            className="modal-box animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.3)',
+              overflow: 'hidden',
+              fontFamily: "'Montserrat', sans-serif",
+            }}
+          >
+            <div
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid #f2efed',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: '#ffffff',
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#251f1d' }}>
+                  ✏️ Agregar Nota al Expediente
+                </h3>
+                <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#8e8784' }}>
+                  Cliente: <strong style={{ color: '#251f1d' }}>{notaModalClient.nombre}</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isSavingNota) setNotaModalClient(null);
+                }}
+                disabled={isSavingNota}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }}
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarNota} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {notaModalClient.observaciones && (
+                <div>
+                  <label style={{ fontSize: '11px', fontWeight: 700, color: '#8e8784', display: 'block', marginBottom: '5px' }}>
+                    Historial de notas previas:
+                  </label>
+                  <div
+                    style={{
+                      maxHeight: '110px',
+                      overflowY: 'auto',
+                      padding: '10px 12px',
+                      backgroundColor: '#faf9f8',
+                      borderRadius: '8px',
+                      border: '1px solid #f0edeb',
+                      fontSize: '11px',
+                      color: '#6e6764',
+                      lineHeight: 1.45,
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {notaModalClient.observaciones}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '6px' }}>
+                  Nueva nota de seguimiento <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <textarea
+                  autoFocus
+                  rows={4}
+                  placeholder="Ej. Se le dio seguimiento sobre la aprobación de crédito. Comentó que pasará mañana por la tarde..."
+                  value={notaTexto}
+                  onChange={(e) => setNotaTexto(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d5d0ce',
+                    fontSize: '13px',
+                    fontFamily: "'Montserrat', sans-serif",
+                    color: '#251f1d',
+                    outline: 'none',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px', paddingTop: '12px', borderTop: '1px solid #f2efed' }}>
+                <button
+                  type="button"
+                  onClick={() => setNotaModalClient(null)}
+                  disabled={isSavingNota}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #d5d0ce',
+                    backgroundColor: '#ffffff',
+                    color: '#251f1d',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingNota}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: '#ff8901',
+                    color: '#251f1d',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    cursor: isSavingNota ? 'not-allowed' : 'pointer',
+                    opacity: isSavingNota ? 0.7 : 1,
+                  }}
+                >
+                  {isSavingNota ? 'Guardando...' : 'Guardar Nota'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

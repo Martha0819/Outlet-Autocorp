@@ -33,6 +33,7 @@ export async function PATCH(request, { params }) {
   if (body.etapaId !== undefined) data.etapaId = Number(body.etapaId);
   if (body.tipoSeguimientoId !== undefined) data.tipoSeguimientoId = body.tipoSeguimientoId ? Number(body.tipoSeguimientoId) : null;
   if (body.observaciones !== undefined) data.observaciones = body.observaciones?.trim() ? body.observaciones.trim() : null;
+  if (body.folio !== undefined) data.folio = body.folio?.trim() ? body.folio.trim() : null;
   if (body.totalUnidad !== undefined) {
     data.totalUnidad = body.totalUnidad !== null && body.totalUnidad !== '' ? body.totalUnidad : null;
   }
@@ -65,6 +66,15 @@ export async function PATCH(request, { params }) {
       data,
       include: INCLUDE_NEGOCIO,
     });
+
+    const vId = data.vehiculoId !== undefined ? data.vehiculoId : objetivo.vehiculoId;
+    if (vId) {
+      if (data.totalUnidad !== undefined && data.totalUnidad !== null) {
+        await prisma.vehiculo.update({ where: { id: Number(vId) }, data: { estatus: 'VENDIDO' } });
+      } else if (data.dioEnganche) {
+        await prisma.vehiculo.update({ where: { id: Number(vId) }, data: { estatus: 'APARTADO' } });
+      }
+    }
     await registrarBitacora({
       usuarioId: auth.usuario.id,
       accion: 'editar',

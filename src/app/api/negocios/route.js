@@ -44,6 +44,7 @@ export async function POST(request) {
     dioEnganche,
     enganche,
     totalUnidad,
+    folio,
     observaciones,
   } = body;
 
@@ -76,10 +77,25 @@ export async function POST(request) {
       dioEnganche: Boolean(dioEnganche),
       enganche: dioEnganche ? enganche : null,
       totalUnidad: totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '' ? totalUnidad : null,
+      folio: folio?.trim() ? folio.trim() : null,
       observaciones: observaciones?.trim() ? observaciones.trim() : null,
     },
     include: INCLUDE_NEGOCIO,
   });
+
+  if (vehiculoId) {
+    if (totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '') {
+      await prisma.vehiculo.update({
+        where: { id: Number(vehiculoId) },
+        data: { estatus: 'VENDIDO' },
+      });
+    } else if (dioEnganche) {
+      await prisma.vehiculo.update({
+        where: { id: Number(vehiculoId) },
+        data: { estatus: 'APARTADO' },
+      });
+    }
+  }
 
   await registrarBitacora({
     usuarioId: auth.usuario.id,
