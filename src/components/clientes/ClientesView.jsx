@@ -15,6 +15,7 @@ import {
   useCreateDemoMutation,
   useDeleteDemoMutation,
 } from '@/store/features/demos/demoApiSlice';
+import { useGetNegociosQuery } from '@/store/features/negocios/negocioApiSlice';
 import { usePermiso } from '@/store/features/auth/usePermiso';
 import {
   SearchIcon,
@@ -30,6 +31,7 @@ import {
   CheckIcon,
 } from '@/components/ui/Icons';
 import { TestDriveModal } from '@/components/demos/TestDriveModal';
+import { NegocioModal } from '@/components/clientes/NegocioModal';
 
 const inputStyle = {
   width: '100%',
@@ -56,6 +58,8 @@ export function ClientesView() {
   const { puede } = usePermiso();
   const puedeCrear = puede('cliente', 'crear');
   const puedeEditar = puede('cliente', 'editar');
+  const puedeCrearNegocio = puede('negocio', 'crear');
+  const puedeEditarNegocio = puede('negocio', 'editar');
 
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -66,6 +70,7 @@ export function ClientesView() {
   const [active360Client, setActive360Client] = useState(null);
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [demoClientId, setDemoClientId] = useState(null);
+  const [negocioModal, setNegocioModal] = useState(null); // { cliente, modo: 'solicitud'|'venta', negocioExistente }
 
   // Formulario de Cliente (Alta / Edición)
   const [formData, setFormData] = useState({
@@ -96,6 +101,12 @@ export function ClientesView() {
     if (!demosData) return [];
     return Array.isArray(demosData) ? demosData : (demosData.items || []);
   }, [demosData]);
+
+  const { data: negociosData } = useGetNegociosQuery();
+  const allNegocios = useMemo(() => {
+    if (!negociosData) return [];
+    return Array.isArray(negociosData) ? negociosData : (negociosData.items || []);
+  }, [negociosData]);
 
   const [createCliente, { isLoading: isCreating }] = useCreateClienteMutation();
   const [updateCliente, { isLoading: isUpdating }] = useUpdateClienteMutation();
@@ -880,42 +891,59 @@ export function ClientesView() {
                   >
                     🌐 Programar prueba
                   </button>
-                  <button
-                    onClick={() => notify('Crear solicitud de financiamiento')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#ffffff',
-                      color: '#251f1d',
-                      border: '1px solid #d5d0ce',
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    📄 Crear solicitud
-                  </button>
-                  <button
-                    onClick={() => notify('Registrar venta en caja')}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      backgroundColor: '#251f1d',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '8px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    💵 Registrar venta
-                  </button>
+                  {puedeCrearNegocio && (
+                    <button
+                      onClick={() => setNegocioModal({ cliente: currentClient, modo: 'solicitud', negocioExistente: null })}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: '#ffffff',
+                        color: '#251f1d',
+                        border: '1px solid #d5d0ce',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      📄 Crear solicitud
+                    </button>
+                  )}
+                  {(puedeCrearNegocio || puedeEditarNegocio) && (
+                    <button
+                      onClick={() => {
+                        const negocioAbierto = allNegocios
+                          .filter((n) => n.clienteId === currentClient.id && n.totalUnidad == null)
+                          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0];
+                        if (negocioAbierto && !puedeEditarNegocio) {
+                          notify('No tienes permiso para editar negocios existentes', 'error');
+                          return;
+                        }
+                        if (!negocioAbierto && !puedeCrearNegocio) {
+                          notify('No tienes permiso para crear negocios', 'error');
+                          return;
+                        }
+                        setNegocioModal({ cliente: currentClient, modo: 'venta', negocioExistente: negocioAbierto || null });
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        backgroundColor: '#251f1d',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💵 Registrar venta
+                    </button>
+                  )}
                 </div>
 
                 {/* Grid 2 Columnas de la Ficha 360 */}
@@ -1017,29 +1045,75 @@ export function ClientesView() {
                       )}
                     </div>
 
-                    {/* Solicitudes */}
-                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
-                        📄 Solicitudes de Crédito / Compra (0)
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#8e8784' }}>Sin solicitudes de financiamiento registradas.</div>
-                    </div>
+                    {/* Solicitudes / Negocios */}
+                    {(() => {
+                      const clientNegocios = allNegocios.filter((n) => n.clienteId === currentClient.id);
+                      return (
+                        <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                            📄 Solicitudes de Crédito / Compra ({clientNegocios.length})
+                          </div>
+                          {clientNegocios.length === 0 ? (
+                            <div style={{ fontSize: '11px', color: '#8e8784' }}>Sin solicitudes de financiamiento registradas.</div>
+                          ) : (
+                            clientNegocios.map((n) => (
+                              <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #ff8901', paddingLeft: '8px', marginBottom: 6 }}>
+                                <div style={{ fontWeight: 700, color: '#251f1d' }}>
+                                  {n.lineaNegocio?.nombre} · {n.etapa?.nombre}
+                                </div>
+                                <div>{formatDate(n.fecha, 'long')} · Asesor: {n.usuario?.nombre}</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Enganches Recibidos */}
-                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
-                        💵 Enganches Recibidos en Caja (0)
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#8e8784' }}>No se han registrado pagos de enganche para este cliente.</div>
-                    </div>
+                    {(() => {
+                      const engaches = allNegocios.filter((n) => n.clienteId === currentClient.id && n.dioEnganche);
+                      return (
+                        <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                            💵 Enganches Recibidos en Caja ({engaches.length})
+                          </div>
+                          {engaches.length === 0 ? (
+                            <div style={{ fontSize: '11px', color: '#8e8784' }}>No se han registrado pagos de enganche para este cliente.</div>
+                          ) : (
+                            engaches.map((n) => (
+                              <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #16a34a', paddingLeft: '8px', marginBottom: 6 }}>
+                                <div style={{ fontWeight: 700, color: '#251f1d' }}>{formatCurrency(n.enganche)}</div>
+                                <div>{formatDate(n.fecha, 'long')}</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Compras Realizadas */}
-                    <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
-                        🏷️ Compras Realizadas (0)
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#8e8784' }}>Aún no ha concretado compras en el outlet.</div>
-                    </div>
+                    {(() => {
+                      const compras = allNegocios.filter((n) => n.clienteId === currentClient.id && n.totalUnidad != null);
+                      return (
+                        <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
+                            🏷️ Compras Realizadas ({compras.length})
+                          </div>
+                          {compras.length === 0 ? (
+                            <div style={{ fontSize: '11px', color: '#8e8784' }}>Aún no ha concretado compras en el outlet.</div>
+                          ) : (
+                            compras.map((n) => (
+                              <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #251f1d', paddingLeft: '8px', marginBottom: 6 }}>
+                                <div style={{ fontWeight: 700, color: '#251f1d' }}>
+                                  {n.vehiculo ? `${n.vehiculo.marca?.nombre || ''} ${n.vehiculo.nombre} ${n.vehiculo.anio}` : 'Unidad sin vincular'} · {formatCurrency(n.totalUnidad)}
+                                </div>
+                                <div>{formatDate(n.fecha, 'long')}</div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -1062,6 +1136,15 @@ export function ClientesView() {
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
         defaultClientId={demoClientId}
+      />
+
+      {/* Modal de Solicitud / Venta (Negocio) */}
+      <NegocioModal
+        isOpen={Boolean(negocioModal)}
+        onClose={() => setNegocioModal(null)}
+        cliente={negocioModal?.cliente}
+        modo={negocioModal?.modo}
+        negocioExistente={negocioModal?.negocioExistente}
       />
     </div>
   );
