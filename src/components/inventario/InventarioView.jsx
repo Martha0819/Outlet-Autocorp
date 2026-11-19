@@ -18,7 +18,6 @@ import { ImportadorInventario } from './ImportadorInventario';
 
 const ESTATUS_OPTIONS = ['DISPONIBLE', 'APARTADO', 'VENDIDO', 'NO_DISPONIBLE'];
 const ESTATUS_LABELS = { DISPONIBLE: 'Disponible', APARTADO: 'Apartado', VENDIDO: 'Vendido', NO_DISPONIBLE: 'No disponible' };
-const CONDICION_OPTIONS = ['NUEVO', 'SEMINUEVO'];
 const PAGE_SIZE = 15;
 
 const inputStyle = {
@@ -50,7 +49,7 @@ const selectPillStyle = {
 };
 
 function emptyForm() {
-  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', condicion: 'SEMINUEVO', marcaId: '', unidadNegocioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '' };
+  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', marcaId: '', unidadNegocioId: '', servicioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '' };
 }
 
 // Debounce simple: espera 350ms de silencio antes de disparar la búsqueda al
@@ -72,13 +71,14 @@ export function InventarioView() {
   const puedeEditar = puede('vehiculo', 'editar');
   const { data: marcas = [] } = useGetCatalogoQuery('marca');
   const { data: unidadesNegocio = [] } = useGetCatalogoQuery('unidad-negocio');
+  const { data: lineasNegocio = [] } = useGetCatalogoQuery('linea-negocio');
   const [createVehiculo, { isLoading: isCreating }] = useCreateVehiculoMutation();
   const [updateVehiculo] = useUpdateVehiculoMutation();
 
   const [filterEstatus, setFilterEstatus] = useState('DISPONIBLE');
   const [search, setSearch] = useState('');
   const [marcaFilter, setMarcaFilter] = useState('all');
-  const [condicionFilter, setCondicionFilter] = useState('all');
+  const [servicioFilter, setServicioFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [page, setPage] = useState(1);
 
@@ -86,14 +86,14 @@ export function InventarioView() {
 
   // Cualquier cambio de filtro regresa a la página 1 — si no, podrías
   // quedar "parado" en una página 4 que ya no existe para el filtro nuevo.
-  useEffect(() => { setPage(1); }, [filterEstatus, marcaFilter, condicionFilter, searchDebounced]);
+  useEffect(() => { setPage(1); }, [filterEstatus, marcaFilter, servicioFilter, searchDebounced]);
 
   const { data, isLoading, refetch: refetchVehiculos } = useGetVehiculosQuery({
     page,
     pageSize: PAGE_SIZE,
     estatus: filterEstatus,
     marcaId: marcaFilter,
-    condicion: condicionFilter,
+    servicioId: servicioFilter,
     q: searchDebounced,
   });
   const vehiculosPagina = data?.items ?? [];
@@ -151,9 +151,9 @@ export function InventarioView() {
       km: v.km,
       vin: v.vin || '',
       transmision: v.transmision,
-      condicion: v.condicion,
       marcaId: v.marcaId,
       unidadNegocioId: v.unidadNegocioId,
+      servicioId: v.servicioId ?? '',
       precioSinIva: v.precioSinIva ?? '',
       precioLista: v.precioLista ?? '',
       precioRemate: v.precioRemate ?? '',
@@ -252,9 +252,9 @@ export function InventarioView() {
             {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
 
-          <select value={condicionFilter} onChange={(e) => setCondicionFilter(e.target.value)} style={selectPillStyle}>
-            <option value="all">Condición: Todas</option>
-            {CONDICION_OPTIONS.map((c) => <option key={c} value={c}>{c === 'NUEVO' ? 'Nuevo' : 'Seminuevo'}</option>)}
+          <select value={servicioFilter} onChange={(e) => setServicioFilter(e.target.value)} style={selectPillStyle}>
+            <option value="all">Servicio: Todos</option>
+            {lineasNegocio.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
           </select>
 
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selectPillStyle}>
@@ -273,15 +273,16 @@ export function InventarioView() {
             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" placeholder="Año" value={newForm.anio} onChange={(e) => setNewForm({ ...newForm, anio: e.target.value })} /></div>
             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" placeholder="Km" value={newForm.km} onChange={(e) => setNewForm({ ...newForm, km: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Transmisión" value={newForm.transmision} onChange={(e) => setNewForm({ ...newForm, transmision: e.target.value })} /></div>
-            <div style={{ flex: '1 1 130px' }}>
-              <select style={inputStyle} value={newForm.condicion} onChange={(e) => setNewForm({ ...newForm, condicion: e.target.value })}>
-                {CONDICION_OPTIONS.map((c) => <option key={c} value={c}>{c === 'NUEVO' ? 'Nuevo' : 'Seminuevo'}</option>)}
-              </select>
-            </div>
             <div style={{ flex: '1 1 140px' }}>
               <select style={inputStyle} value={newForm.marcaId} onChange={(e) => setNewForm({ ...newForm, marcaId: e.target.value })}>
                 <option value="">Marca…</option>
                 {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+              </select>
+            </div>
+            <div style={{ flex: '1 1 140px' }}>
+              <select style={inputStyle} value={newForm.servicioId} onChange={(e) => setNewForm({ ...newForm, servicioId: e.target.value })}>
+                <option value="">Servicio…</option>
+                {lineasNegocio.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
               </select>
             </div>
             <div style={{ flex: '1 1 160px' }}>
@@ -345,14 +346,15 @@ export function InventarioView() {
                             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" value={editForm.anio} onChange={(e) => setEditForm({ ...editForm, anio: e.target.value })} /></div>
                             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" value={editForm.km} onChange={(e) => setEditForm({ ...editForm, km: e.target.value })} /></div>
                             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} value={editForm.transmision} onChange={(e) => setEditForm({ ...editForm, transmision: e.target.value })} /></div>
-                            <div style={{ flex: '1 1 130px' }}>
-                              <select style={inputStyle} value={editForm.condicion} onChange={(e) => setEditForm({ ...editForm, condicion: e.target.value })}>
-                                {CONDICION_OPTIONS.map((c) => <option key={c} value={c}>{c === 'NUEVO' ? 'Nuevo' : 'Seminuevo'}</option>)}
-                              </select>
-                            </div>
                             <div style={{ flex: '1 1 140px' }}>
                               <select style={inputStyle} value={editForm.marcaId} onChange={(e) => setEditForm({ ...editForm, marcaId: e.target.value })}>
                                 {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                              </select>
+                            </div>
+                            <div style={{ flex: '1 1 140px' }}>
+                              <select style={inputStyle} value={editForm.servicioId} onChange={(e) => setEditForm({ ...editForm, servicioId: e.target.value })}>
+                                <option value="">Servicio…</option>
+                                {lineasNegocio.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
                               </select>
                             </div>
                             <div style={{ flex: '1 1 160px' }}>
@@ -384,7 +386,9 @@ export function InventarioView() {
                     <tr key={v.id} style={{ borderBottom: '1px solid #eae7e5', transition: 'background-color 0.15s' }}>
                       <td style={{ padding: '20px 28px', verticalAlign: 'middle' }}>
                         <div style={{ fontWeight: 800, fontSize: 14, color: '#251f1d' }}>{v.marca?.nombre} {v.nombre} {v.modelo}</div>
-                        <div style={{ fontSize: 11, color: '#8e8784', marginTop: 4 }}>{v.vin || 'Sin VIN'} · {v.condicion === 'NUEVO' ? 'Nuevo' : 'Seminuevo'}</div>
+                        <div style={{ fontSize: 11, color: '#8e8784', marginTop: 4 }}>
+                          {v.vin || 'Sin VIN'}{v.servicio?.nombre ? ` · ${v.servicio.nombre}` : ' · Sin servicio'}
+                        </div>
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>
                         <strong>{v.anio}</strong> <span style={{ color: '#8e8784' }}>· {formatNumber(v.km)} km</span>

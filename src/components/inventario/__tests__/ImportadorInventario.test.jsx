@@ -1,7 +1,18 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { ImportadorInventario } from '../ImportadorInventario';
+
+function renderComoAdmin(ui) {
+  const estado = { auth: { usuario: { esAdministrador: true, unidadNegocioId: null, permisos: [] } } };
+  const store = {
+    getState: () => estado,
+    subscribe: () => () => {},
+    dispatch: () => {},
+  };
+  return render(<Provider store={store}>{ui}</Provider>);
+}
 
 const ANALISIS = {
   mapeoSugerido: [{ columna: 'Modelo', campo: 'modelo' }],
@@ -9,10 +20,10 @@ const ANALISIS = {
     {
       datosOriginales: { Modelo: 'Sentra' },
       estado: 'lista',
-      valoresResueltos: { nombre: 'Auto', modelo: 'Sentra', anio: 2020, marcaId: 1, unidadNegocioId: 10 },
+      valoresResueltos: { nombre: 'Auto', modelo: 'Sentra', anio: 2020, marcaId: 1 },
     },
   ],
-  catalogo: { marcas: [], unidadesNegocio: [] },
+  catalogo: { marcas: [], unidadesNegocio: [{ id: 10, nombre: 'Matriz' }], lineasNegocio: [] },
 };
 
 const RESUMEN = { importados: { cuenta: 1, lista: [] }, conError: { cuenta: 0, lista: [] }, resueltosManualmente: 0 };
@@ -36,13 +47,14 @@ describe('ImportadorInventario', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => RESUMEN });
 
     const onImportacionCompleta = vi.fn();
-    render(<ImportadorInventario onImportacionCompleta={onImportacionCompleta} />);
+    renderComoAdmin(<ImportadorInventario onImportacionCompleta={onImportacionCompleta} />);
 
     const input = screen.getByLabelText(/seleccionar archivo/i);
     fireEvent.change(input, { target: { files: [archivoCsv()] } });
 
     await waitFor(() => expect(screen.getByRole('button', { name: /confirmar importación/i })).toBeInTheDocument());
 
+    fireEvent.change(screen.getByLabelText(/unidad de negocio de este inventario/i), { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: /confirmar importación/i }));
 
     await waitFor(() => expect(screen.getByText('Resumen de la importación')).toBeInTheDocument());

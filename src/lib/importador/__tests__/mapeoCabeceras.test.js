@@ -3,7 +3,7 @@ import { sugerirMapeo } from '../mapeoCabeceras';
 
 describe('sugerirMapeo', () => {
   it('reconoce cabeceras no estándar (con acentos/mayúsculas distintas) y las asigna al campo correcto', () => {
-    const cabeceras = ['Modelo', 'Descripción', 'AÑO', 'Kilometraje', 'Marca', 'Unidad de Negocio', 'VIN', 'Transmisión', 'Condición', 'Precio'];
+    const cabeceras = ['Modelo', 'Descripción', 'AÑO', 'Kilometraje', 'Marca', 'VIN', 'Transmisión', 'Servicio', 'Precio'];
     const mapeo = sugerirMapeo(cabeceras);
 
     expect(mapeo).toEqual([
@@ -12,10 +12,9 @@ describe('sugerirMapeo', () => {
       { columna: 'AÑO', campo: 'anio' },
       { columna: 'Kilometraje', campo: 'km' },
       { columna: 'Marca', campo: 'marca' },
-      { columna: 'Unidad de Negocio', campo: 'unidadNegocio' },
       { columna: 'VIN', campo: 'vin' },
       { columna: 'Transmisión', campo: 'transmision' },
-      { columna: 'Condición', campo: 'condicion' },
+      { columna: 'Servicio', campo: 'servicio' },
       { columna: 'Precio', campo: 'precioLista' },
     ]);
   });

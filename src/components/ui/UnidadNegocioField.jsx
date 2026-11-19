@@ -15,6 +15,7 @@ export function UnidadNegocioField({
   inputStyle,
   optional = false,
   optionalLabel = 'Toda la unidad / evento (opcional)',
+  id,
 }) {
   useEffect(() => {
     if (!esAdministrador && value !== miUnidadNegocioId) {
@@ -25,7 +26,7 @@ export function UnidadNegocioField({
 
   if (esAdministrador) {
     return (
-      <select style={inputStyle} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select id={id} style={inputStyle} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">{optional ? optionalLabel : 'Unidad de negocio…'}</option>
         {unidadesNegocio.map((u) => <option key={u.id} value={u.id}>{u.nombre}</option>)}
       </select>
@@ -35,6 +36,7 @@ export function UnidadNegocioField({
   const miUnidad = unidadesNegocio.find((u) => u.id === miUnidadNegocioId);
   return (
     <input
+      id={id}
       type="text"
       value={miUnidad?.nombre || 'Mi unidad de negocio'}
       disabled

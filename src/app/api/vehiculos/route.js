@@ -10,7 +10,7 @@ export async function GET(request) {
   const url = new URL(request.url);
   const estatus = url.searchParams.get('estatus');
   const marcaId = url.searchParams.get('marcaId');
-  const condicion = url.searchParams.get('condicion');
+  const servicioId = url.searchParams.get('servicioId');
   const q = url.searchParams.get('q');
 
   // Los filtros van al WHERE (no al cliente): con paginación, filtrar solo
@@ -19,7 +19,7 @@ export async function GET(request) {
     ...(esAdministrador(auth.usuario) ? {} : { unidadNegocioId: auth.usuario.unidadNegocioId }),
     ...(estatus && estatus !== 'all' ? { estatus } : {}),
     ...(marcaId && marcaId !== 'all' ? { marcaId: Number(marcaId) } : {}),
-    ...(condicion && condicion !== 'all' ? { condicion } : {}),
+    ...(servicioId && servicioId !== 'all' ? { servicioId: Number(servicioId) } : {}),
     ...(q
       ? {
           OR: [
@@ -35,7 +35,7 @@ export async function GET(request) {
   if (!pagination) {
     const vehiculos = await prisma.vehiculo.findMany({
       where,
-      include: { marca: true, unidadNegocio: true },
+      include: { marca: true, unidadNegocio: true, servicio: true },
       orderBy: { id: 'desc' },
     });
     return Response.json(vehiculos);
@@ -44,7 +44,7 @@ export async function GET(request) {
   const [vehiculos, total] = await Promise.all([
     prisma.vehiculo.findMany({
       where,
-      include: { marca: true, unidadNegocio: true },
+      include: { marca: true, unidadNegocio: true, servicio: true },
       orderBy: { id: 'desc' },
       skip: pagination.skip,
       take: pagination.take,
@@ -59,13 +59,13 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, modelo, anio, km, vin, transmision, condicion, marcaId, precioSinIva, precioLista, precioRemate, bono } = body;
+  const { nombre, modelo, anio, km, vin, transmision, marcaId, servicioId, precioSinIva, precioLista, precioRemate, bono } = body;
   // Un no-Administrador solo puede crear vehículos en su propia unidad.
   const unidadNegocioId = esAdministrador(auth.usuario) ? body.unidadNegocioId : auth.usuario.unidadNegocioId;
 
-  if (!nombre?.trim() || !modelo?.trim() || !anio || !transmision?.trim() || !condicion || !marcaId || !unidadNegocioId) {
+  if (!nombre?.trim() || !modelo?.trim() || !anio || !transmision?.trim() || !marcaId || !unidadNegocioId) {
     return Response.json(
-      { error: 'nombre, modelo, anio, transmision, condicion, marcaId y unidadNegocioId son requeridos' },
+      { error: 'nombre, modelo, anio, transmision, marcaId y unidadNegocioId son requeridos' },
       { status: 400 }
     );
   }
@@ -82,15 +82,15 @@ export async function POST(request) {
         km: Number(km) || 0,
         vin: vin?.trim() ? vin.trim() : null,
         transmision,
-        condicion,
         marcaId: Number(marcaId),
         unidadNegocioId: Number(unidadNegocioId),
+        servicioId: servicioId ? Number(servicioId) : null,
         precioSinIva: precioSinIva ? Number(precioSinIva) : null,
         precioLista: Number(precioLista),
         precioRemate: precioRemate ? Number(precioRemate) : null,
         bono: bono ? Number(bono) : null,
       },
-      include: { marca: true, unidadNegocio: true },
+      include: { marca: true, unidadNegocio: true, servicio: true },
     });
     await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'vehiculo', recursoId: vehiculo.id, detalle: `${vehiculo.nombre} ${vehiculo.modelo}` });
     return Response.json(vehiculo, { status: 201 });
