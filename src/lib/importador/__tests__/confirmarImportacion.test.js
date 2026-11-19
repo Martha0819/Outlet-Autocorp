@@ -10,11 +10,12 @@ const MAPEO_BASE = [
   { columna: 'Transmision', campo: 'transmision' },
   { columna: 'Condicion', campo: 'condicion' },
   { columna: 'VIN', campo: 'vin' },
+  { columna: 'PrecioLista', campo: 'precioLista' },
 ];
 
 function filaDecidida(catalogo, overrides = {}) {
   return {
-    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', Condicion: 'SEMINUEVO', VIN: '' },
+    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', Condicion: 'SEMINUEVO', VIN: '', PrecioLista: '250000' },
     decision: 'importar',
     marcaId: catalogo.nissan.id,
     unidadNegocioId: catalogo.matriz.id,
@@ -129,6 +130,16 @@ describe('confirmarFilas', () => {
     const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: filas, usuarioActual: administrador });
 
     expect(resumen.resueltosManualmente).toBe(1);
+  });
+
+  it('rechaza una fila "importar" sin precio de lista', async () => {
+    const filas = [filaDecidida(catalogo, { datosOriginales: { ...filaDecidida(catalogo).datosOriginales, PrecioLista: '', VIN: 'VIN-SIN-PRECIO' } })];
+
+    const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: filas, usuarioActual: administrador });
+
+    expect(resumen.importados.cuenta).toBe(0);
+    expect(resumen.conError.cuenta).toBe(1);
+    expect(resumen.conError.lista[0].motivo).toMatch(/precio de lista/i);
   });
 
   it('rechaza una fila "importar" si el usuario no-administrador apunta a otra unidad de negocio', async () => {

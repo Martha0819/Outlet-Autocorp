@@ -16,7 +16,7 @@ describe('sugerirMapeo', () => {
       { columna: 'VIN', campo: 'vin' },
       { columna: 'Transmisión', campo: 'transmision' },
       { columna: 'Condición', campo: 'condicion' },
-      { columna: 'Precio', campo: 'precio' },
+      { columna: 'Precio', campo: 'precioLista' },
     ]);
   });
 

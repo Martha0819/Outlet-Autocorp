@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion', 'precioLista'];
 const CONDICIONES_VALIDAS = ['NUEVO', 'SEMINUEVO'];
 
 const ETIQUETA_CAMPO = {
@@ -10,6 +10,7 @@ const ETIQUETA_CAMPO = {
   anio: 'año',
   transmision: 'transmisión',
   condicion: 'condición',
+  precioLista: 'precio de lista',
 };
 
 function valoresPorCampo(filaCruda, mapeo) {
@@ -57,6 +58,12 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
       continue;
     }
 
+    const precioLista = Number(valores.precioLista);
+    if (!Number.isFinite(precioLista) || precioLista <= 0) {
+      conError.push({ datosOriginales: fila.datosOriginales, motivo: 'precio de lista no numérico' });
+      continue;
+    }
+
     if (!fila.marcaId || !fila.unidadNegocioId) {
       conError.push({ datosOriginales: fila.datosOriginales, motivo: 'marca o unidad de negocio sin resolver' });
       continue;
@@ -88,7 +95,10 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           condicion: String(valores.condicion).toUpperCase(),
           marcaId: fila.marcaId,
           unidadNegocioId: fila.unidadNegocioId,
-          precio: valores.precio ? Number(valores.precio) : null,
+          precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
+          precioLista,
+          precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
+          bono: valores.bono ? Number(valores.bono) : null,
         },
       });
       await registrarBitacora({

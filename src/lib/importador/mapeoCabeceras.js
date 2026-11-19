@@ -10,7 +10,10 @@ const SINONIMOS_POR_CAMPO = {
   condicion: ['condicion'],
   marca: ['marca', 'brand'],
   unidadNegocio: ['unidad de negocio', 'unidadnegocio', 'sucursal'],
-  precio: ['precio', 'price'],
+  precioSinIva: ['precio sin iva', 'preciosiniva', 'precio neto'],
+  precioLista: ['precio de lista', 'preciolista', 'precio', 'price'],
+  precioRemate: ['precio de remate', 'precio con remate', 'precioremate', 'remate'],
+  bono: ['bono', 'bono si aplica'],
 };
 
 function campoParaCabecera(cabecera) {

@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { normalizarTexto } from './normalizar';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion', 'marca', 'unidadNegocio'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion', 'marca', 'unidadNegocio', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
@@ -11,6 +11,7 @@ const ETIQUETA_CAMPO = {
   condicion: 'condición',
   marca: 'marca',
   unidadNegocio: 'unidad de negocio',
+  precioLista: 'precio de lista',
 };
 
 function valoresPorCampo(filaCruda, mapeo) {
@@ -62,6 +63,12 @@ export async function clasificarFilas({ filas, mapeo, usuarioActual }) {
       continue;
     }
 
+    const precioLista = Number(valores.precioLista);
+    if (!Number.isFinite(precioLista) || precioLista <= 0) {
+      resultado.push({ datosOriginales: filaCruda, estado: 'error', motivoError: 'precio de lista no numérico' });
+      continue;
+    }
+
     const marca = encontrarPorNombre(marcas, valores.marca);
     const unidadNegocio = encontrarPorNombre(unidadesNegocio, valores.unidadNegocio);
 
@@ -107,7 +114,10 @@ export async function clasificarFilas({ filas, mapeo, usuarioActual }) {
         vin,
         transmision: valores.transmision,
         condicion: valores.condicion,
-        precio: valores.precio ? Number(valores.precio) : null,
+        precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
+        precioLista: Number(valores.precioLista),
+        precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
+        bono: valores.bono ? Number(valores.bono) : null,
         marcaId: marca.id,
         unidadNegocioId: unidadNegocio.id,
       },

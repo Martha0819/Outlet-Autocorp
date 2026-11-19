@@ -59,7 +59,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, modelo, anio, km, vin, transmision, condicion, marcaId, precio } = body;
+  const { nombre, modelo, anio, km, vin, transmision, condicion, marcaId, precioSinIva, precioLista, precioRemate, bono } = body;
   // Un no-Administrador solo puede crear vehículos en su propia unidad.
   const unidadNegocioId = esAdministrador(auth.usuario) ? body.unidadNegocioId : auth.usuario.unidadNegocioId;
 
@@ -68,6 +68,9 @@ export async function POST(request) {
       { error: 'nombre, modelo, anio, transmision, condicion, marcaId y unidadNegocioId son requeridos' },
       { status: 400 }
     );
+  }
+  if (!precioLista) {
+    return Response.json({ error: 'precioLista es requerido' }, { status: 400 });
   }
 
   try {
@@ -82,7 +85,10 @@ export async function POST(request) {
         condicion,
         marcaId: Number(marcaId),
         unidadNegocioId: Number(unidadNegocioId),
-        precio: precio ? Number(precio) : null,
+        precioSinIva: precioSinIva ? Number(precioSinIva) : null,
+        precioLista: Number(precioLista),
+        precioRemate: precioRemate ? Number(precioRemate) : null,
+        bono: bono ? Number(bono) : null,
       },
       include: { marca: true, unidadNegocio: true },
     });

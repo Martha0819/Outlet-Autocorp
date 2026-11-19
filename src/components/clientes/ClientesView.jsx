@@ -998,7 +998,7 @@ export function ClientesView() {
                                   {v.marca?.nombre || ''} {v.nombre || v.modelo} {v.anio}
                                 </div>
                                 <div style={{ fontSize: '11px', color: '#8e8784' }}>
-                                  {v.precio ? formatCurrency(v.precio) : 'Precio a cotizar'}
+                                  {v.precioLista ? formatCurrency(v.precioLista) : 'Precio a cotizar'}
                                 </div>
                               </div>
                               <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '9999px', background: '#dcfce7', color: '#16a34a' }}>

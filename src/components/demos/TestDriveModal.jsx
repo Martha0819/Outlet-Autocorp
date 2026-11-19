@@ -238,7 +238,7 @@ export function TestDriveModal({
                 <option value="">Seleccionar vehículo...</option>
                 {vehiculos.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.marca?.nombre || ''} {v.nombre} {v.anio} — {formatCurrency(v.precio || 0)} [{v.estatus}]
+                    {v.marca?.nombre || ''} {v.nombre} {v.anio} — {formatCurrency(v.precioLista || 0)} [{v.estatus}]
                   </option>
                 ))}
               </select>

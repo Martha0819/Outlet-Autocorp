@@ -30,7 +30,21 @@ export async function PATCH(request, { params }) {
   if (body.unidadNegocioId !== undefined && esAdministrador(auth.usuario)) {
     data.unidadNegocioId = Number(body.unidadNegocioId);
   }
-  if (body.precio !== undefined) data.precio = body.precio === '' || body.precio === null ? null : Number(body.precio);
+  if (body.precioSinIva !== undefined) {
+    data.precioSinIva = body.precioSinIva === '' || body.precioSinIva === null ? null : Number(body.precioSinIva);
+  }
+  if (body.precioLista !== undefined) {
+    if (body.precioLista === '' || body.precioLista === null) {
+      return Response.json({ error: 'precioLista es requerido' }, { status: 400 });
+    }
+    data.precioLista = Number(body.precioLista);
+  }
+  if (body.precioRemate !== undefined) {
+    data.precioRemate = body.precioRemate === '' || body.precioRemate === null ? null : Number(body.precioRemate);
+  }
+  if (body.bono !== undefined) {
+    data.bono = body.bono === '' || body.bono === null ? null : Number(body.bono);
+  }
 
   try {
     const vehiculo = await prisma.vehiculo.update({

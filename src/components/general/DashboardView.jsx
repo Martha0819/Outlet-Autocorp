@@ -114,8 +114,8 @@ export function DashboardView() {
   const invitadosCount = clientes.length;
   const demosCount = demos.length;
   const guardiasCount = guardias.length;
-  const soldAmount = soldVehicles.reduce((acc, v) => acc + Number(v.precio || 0), 0);
-  const engancheAmount = reservedVehicles.reduce((acc, v) => acc + (Number(v.precio || 0) * 0.2), 0);
+  const soldAmount = soldVehicles.reduce((acc, v) => acc + Number(v.precioRemate || v.precioLista || 0), 0);
+  const engancheAmount = reservedVehicles.reduce((acc, v) => acc + (Number(v.precioRemate || v.precioLista || 0) * 0.2), 0);
 
   // Embudo de conversión real
   const funnelSteps = useMemo(() => {

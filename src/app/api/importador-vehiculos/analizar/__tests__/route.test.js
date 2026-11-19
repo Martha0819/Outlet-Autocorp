@@ -48,7 +48,7 @@ describe('POST /api/importador-vehiculos/analizar', () => {
     const { POST } = await importarRouteConSesion(token);
 
     const vehiculosAntes = await prisma.vehiculo.count();
-    const csv = 'Modelo,Descripcion,Anio,Marca,UnidadNegocio,Transmision,Condicion\nSentra,Auto seminuevo,2020,Nissan,Matriz,Automatica,SEMINUEVO\n';
+    const csv = 'Modelo,Descripcion,Anio,Marca,UnidadNegocio,Transmision,Condicion,Precio\nSentra,Auto seminuevo,2020,Nissan,Matriz,Automatica,SEMINUEVO,250000\n';
     const respuesta = await POST(await peticionConArchivo(archivoCsv(csv)));
     const cuerpo = await respuesta.json();
 

@@ -65,7 +65,7 @@ describe('flujo completo del importador (analizar → confirmar)', () => {
     const { token } = await crearUsuarioDePrueba({ esAdministrador: true, unidadNegocioId: catalogo.matriz.id, permisos: [['vehiculo', 'crear']] });
     const { POST_analizar, POST_confirmar } = await rutasConSesion(token);
 
-    const csv = 'Modelo,Descripcion,Año,Marca,Unidad de Negocio,Transmisión,Condición,VIN\nSentra,Auto seminuevo,2020,Nissan,Matriz,Automática,SEMINUEVO,VIN-FELIZ\n';
+    const csv = 'Modelo,Descripcion,Año,Marca,Unidad de Negocio,Transmisión,Condición,VIN,Precio\nSentra,Auto seminuevo,2020,Nissan,Matriz,Automática,SEMINUEVO,VIN-FELIZ,250000\n';
     const analisis = await (await POST_analizar(await peticionAnalizar(archivoCsv(csv)))).json();
 
     // El mapeo sugerido reconoce cabeceras con acentos/mayúsculas distintas al catálogo.
@@ -87,14 +87,14 @@ describe('flujo completo del importador (analizar → confirmar)', () => {
     const { POST_analizar, POST_confirmar } = await rutasConSesion(token);
 
     await prisma.vehiculo.create({
-      data: { nombre: 'Previo', modelo: 'Sentra', anio: 2018, km: 0, vin: 'VIN-YA-EXISTE', transmision: 'Manual', condicion: 'SEMINUEVO', marcaId: catalogo.nissan.id, unidadNegocioId: catalogo.matriz.id },
+      data: { nombre: 'Previo', modelo: 'Sentra', anio: 2018, km: 0, vin: 'VIN-YA-EXISTE', transmision: 'Manual', condicion: 'SEMINUEVO', marcaId: catalogo.nissan.id, unidadNegocioId: catalogo.matriz.id, precioLista: 200000 },
     });
 
     const csv = [
-      'Modelo,Descripcion,Anio,Marca,UnidadNegocio,Transmision,Condicion,VIN',
-      'Civic,Auto nuevo,2021,Nissan,Matriz,Automatica,NUEVO,VIN-VALIDA',
-      'Sentra,Auto repetido,2019,Nissan,Matriz,Manual,SEMINUEVO,VIN-YA-EXISTE',
-      ',Sin modelo,2020,Nissan,Matriz,Automatica,SEMINUEVO,VIN-SIN-MODELO',
+      'Modelo,Descripcion,Anio,Marca,UnidadNegocio,Transmision,Condicion,VIN,Precio',
+      'Civic,Auto nuevo,2021,Nissan,Matriz,Automatica,NUEVO,VIN-VALIDA,300000',
+      'Sentra,Auto repetido,2019,Nissan,Matriz,Manual,SEMINUEVO,VIN-YA-EXISTE,210000',
+      ',Sin modelo,2020,Nissan,Matriz,Automatica,SEMINUEVO,VIN-SIN-MODELO,220000',
     ].join('\n') + '\n';
 
     const analisis = await (await POST_analizar(await peticionAnalizar(archivoCsv(csv)))).json();

@@ -13,7 +13,10 @@ const CAMPOS_CATALOGO = [
   { valor: 'condicion', etiqueta: 'Condición' },
   { valor: 'marca', etiqueta: 'Marca' },
   { valor: 'unidadNegocio', etiqueta: 'Unidad de negocio' },
-  { valor: 'precio', etiqueta: 'Precio' },
+  { valor: 'precioSinIva', etiqueta: 'Precio sin IVA' },
+  { valor: 'precioLista', etiqueta: 'Precio de lista' },
+  { valor: 'precioRemate', etiqueta: 'Precio remate' },
+  { valor: 'bono', etiqueta: 'Bono (si aplica)' },
 ];
 
 const inputStyle = {

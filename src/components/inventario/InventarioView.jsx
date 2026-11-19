@@ -50,7 +50,7 @@ const selectPillStyle = {
 };
 
 function emptyForm() {
-  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', condicion: 'SEMINUEVO', marcaId: '', unidadNegocioId: '', precio: '' };
+  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', condicion: 'SEMINUEVO', marcaId: '', unidadNegocioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '' };
 }
 
 // Debounce simple: espera 350ms de silencio antes de disparar la búsqueda al
@@ -119,8 +119,8 @@ export function InventarioView() {
   // servidor, que no se implementó en esta pasada.
   const vehiculosOrdenados = useMemo(() => {
     return [...vehiculosPagina].sort((a, b) => {
-      if (sortBy === 'price_asc') return (a.precio ?? 0) - (b.precio ?? 0);
-      if (sortBy === 'price_desc') return (b.precio ?? 0) - (a.precio ?? 0);
+      if (sortBy === 'price_asc') return (a.precioLista ?? 0) - (b.precioLista ?? 0);
+      if (sortBy === 'price_desc') return (b.precioLista ?? 0) - (a.precioLista ?? 0);
       if (sortBy === 'year_desc') return b.anio - a.anio;
       return b.id - a.id;
     });
@@ -129,6 +129,10 @@ export function InventarioView() {
   const handleCreate = async () => {
     if (!newForm.nombre.trim() || !newForm.modelo.trim() || !newForm.anio || !newForm.transmision.trim() || !newForm.marcaId || !newForm.unidadNegocioId) {
       notify('Nombre, modelo, año, transmisión, marca y unidad de negocio son requeridos', 'error');
+      return;
+    }
+    if (!newForm.precioLista) {
+      notify('Precio de lista es requerido', 'error');
       return;
     }
     const ok = await reportError(createVehiculo(newForm), 'No se pudo crear el vehículo');
@@ -150,7 +154,10 @@ export function InventarioView() {
       condicion: v.condicion,
       marcaId: v.marcaId,
       unidadNegocioId: v.unidadNegocioId,
-      precio: v.precio ?? ''
+      precioSinIva: v.precioSinIva ?? '',
+      precioLista: v.precioLista ?? '',
+      precioRemate: v.precioRemate ?? '',
+      bono: v.bono ?? ''
     });
     setEditingId(v.id);
   };
@@ -288,7 +295,10 @@ export function InventarioView() {
               />
             </div>
             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="VIN (opcional)" value={newForm.vin} onChange={(e) => setNewForm({ ...newForm, vin: e.target.value })} /></div>
-            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio" value={newForm.precio} onChange={(e) => setNewForm({ ...newForm, precio: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio sin IVA" value={newForm.precioSinIva} onChange={(e) => setNewForm({ ...newForm, precioSinIva: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio de lista" value={newForm.precioLista} onChange={(e) => setNewForm({ ...newForm, precioLista: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio remate" value={newForm.precioRemate} onChange={(e) => setNewForm({ ...newForm, precioRemate: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Bono (si aplica)" value={newForm.bono} onChange={(e) => setNewForm({ ...newForm, bono: e.target.value })} /></div>
             <button
               onClick={handleCreate}
               disabled={isCreating}
@@ -356,7 +366,10 @@ export function InventarioView() {
                               />
                             </div>
                             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="VIN" value={editForm.vin} onChange={(e) => setEditForm({ ...editForm, vin: e.target.value })} /></div>
-                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio" value={editForm.precio} onChange={(e) => setEditForm({ ...editForm, precio: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio sin IVA" value={editForm.precioSinIva} onChange={(e) => setEditForm({ ...editForm, precioSinIva: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio de lista" value={editForm.precioLista} onChange={(e) => setEditForm({ ...editForm, precioLista: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio remate" value={editForm.precioRemate} onChange={(e) => setEditForm({ ...editForm, precioRemate: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Bono (si aplica)" value={editForm.bono} onChange={(e) => setEditForm({ ...editForm, bono: e.target.value })} /></div>
                             <div style={{ display: 'flex', gap: 6 }}>
                               <button className="btn-action-icon" onClick={() => handleUpdate(v.id)} title="Guardar"><CheckIcon size={14} /></button>
                               <button className="btn-action-icon" onClick={() => setEditingId(null)} title="Cancelar"><CloseIcon size={14} /></button>
@@ -378,7 +391,14 @@ export function InventarioView() {
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.transmision}</td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 14, fontWeight: 800, color: '#251f1d' }}>
-                        {v.precio ? formatCurrency(Number(v.precio)) : '—'}
+                        {v.precioLista ? formatCurrency(Number(v.precioLista)) : '—'}
+                        {(v.precioRemate || v.bono) && (
+                          <div style={{ fontSize: 11, fontWeight: 600, color: '#8e8784', marginTop: 2 }}>
+                            {v.precioRemate ? `Remate: ${formatCurrency(Number(v.precioRemate))}` : ''}
+                            {v.precioRemate && v.bono ? ' · ' : ''}
+                            {v.bono ? `Bono: ${formatCurrency(Number(v.bono))}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.unidadNegocio?.nombre}</td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle' }}>

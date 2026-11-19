@@ -12,6 +12,7 @@ const MAPEO_BASE = [
   { columna: 'Transmision', campo: 'transmision' },
   { columna: 'Condicion', campo: 'condicion' },
   { columna: 'VIN', campo: 'vin' },
+  { columna: 'PrecioLista', campo: 'precioLista' },
 ];
 
 function filaBase(overrides = {}) {
@@ -24,6 +25,7 @@ function filaBase(overrides = {}) {
     Transmision: 'Automática',
     Condicion: 'SEMINUEVO',
     VIN: '',
+    PrecioLista: '250000',
     ...overrides,
   };
 }
@@ -113,14 +115,29 @@ describe('clasificarFilas', () => {
     expect(resultado.motivoError).toMatch(/año/i);
   });
 
-  it('no exige km, vin ni precio', async () => {
+  it('no exige km, vin, precio sin iva, precio remate ni bono', async () => {
     const [resultado] = await clasificarFilas({
-      filas: [filaBase()], // sin Km ni Precio en el mapeo/datos
+      filas: [filaBase()], // sin Km, VIN, PrecioSinIva, PrecioRemate ni Bono en el mapeo/datos
       mapeo: MAPEO_BASE,
       usuarioActual: administrador,
     });
 
     expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.precioLista).toBe(250000);
+    expect(resultado.valoresResueltos.precioSinIva).toBeNull();
+    expect(resultado.valoresResueltos.precioRemate).toBeNull();
+    expect(resultado.valoresResueltos.bono).toBeNull();
+  });
+
+  it('marca una fila como "error" cuando falta el precio de lista', async () => {
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ PrecioLista: '' })],
+      mapeo: MAPEO_BASE,
+      usuarioActual: administrador,
+    });
+
+    expect(resultado.estado).toBe('error');
+    expect(resultado.motivoError).toMatch(/precio de lista/i);
   });
 
   it('marca una fila como "error" con motivo "VIN duplicado" cuando el VIN ya existe en el inventario', async () => {

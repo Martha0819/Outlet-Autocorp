@@ -29,9 +29,9 @@ describe('ImportadorRevision', () => {
     render(<ImportadorRevision analisis={ANALISIS_EJEMPLO} onConfirmar={() => {}} />);
 
     const selectComentario = screen.getByLabelText('Comentario');
-    fireEvent.change(selectComentario, { target: { value: 'precio' } });
+    fireEvent.change(selectComentario, { target: { value: 'precioLista' } });
 
-    expect(selectComentario.value).toBe('precio');
+    expect(selectComentario.value).toBe('precioLista');
   });
 
   it('permite resolver manualmente una fila pendiente eligiendo un candidato, y "confirmar" envía exactamente las FilaDecidida esperadas', () => {
