@@ -102,6 +102,18 @@ describe('clasificarFilas', () => {
     expect(resultado.valoresResueltos.precioSinIva).toBeNull();
     expect(resultado.valoresResueltos.precioRemate).toBeNull();
     expect(resultado.valoresResueltos.bono).toBeNull();
+    expect(resultado.valoresResueltos.diasInventario).toBeNull();
+  });
+
+  it('resuelve diasInventario como entero cuando la columna está mapeada', async () => {
+    const mapeoConDias = [...MAPEO_BASE, { columna: 'DiasInventario', campo: 'diasInventario' }];
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ DiasInventario: '45' })],
+      mapeo: mapeoConDias,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.diasInventario).toBe(45);
   });
 
   it('no exige transmision: una fila sin transmisión queda "lista" con transmision=null', async () => {

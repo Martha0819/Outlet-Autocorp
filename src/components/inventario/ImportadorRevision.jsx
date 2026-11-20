@@ -28,6 +28,7 @@ const CAMPOS_MAPEO = [
   { valor: 'precioLista', etiqueta: 'Precio de lista' },
   { valor: 'precioRemate', etiqueta: 'Precio remate' },
   { valor: 'bono', etiqueta: 'Bono (si aplica)' },
+  { valor: 'diasInventario', etiqueta: 'Días en inventario' },
 ];
 
 const ESTADO_INFO = {

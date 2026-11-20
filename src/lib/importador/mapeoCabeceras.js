@@ -13,6 +13,7 @@ const SINONIMOS_POR_CAMPO = {
   precioLista: ['precio de lista', 'preciolista', 'precio', 'price'],
   precioRemate: ['precio de remate', 'precio con remate', 'precioremate', 'remate'],
   bono: ['bono', 'bono si aplica'],
+  diasInventario: ['dias en inventario', 'diasinventario', 'dias de inventario', 'dias inventario'],
 };
 
 function campoParaCabecera(cabecera) {

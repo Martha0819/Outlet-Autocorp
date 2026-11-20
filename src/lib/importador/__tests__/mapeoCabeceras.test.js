@@ -19,6 +19,15 @@ describe('sugerirMapeo', () => {
     ]);
   });
 
+  it('reconoce la columna de días en inventario', () => {
+    const mapeo = sugerirMapeo(['Modelo', 'Dias en Inventario']);
+
+    expect(mapeo).toEqual([
+      { columna: 'Modelo', campo: 'modelo' },
+      { columna: 'Dias en Inventario', campo: 'diasInventario' },
+    ]);
+  });
+
   it('deja sin asignar una columna que no corresponde a ningún campo del catálogo', () => {
     const mapeo = sugerirMapeo(['Modelo', 'Comentario interno']);
 

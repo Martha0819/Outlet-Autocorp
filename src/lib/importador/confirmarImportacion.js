@@ -91,6 +91,7 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           precioLista,
           precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
           bono: valores.bono ? Number(valores.bono) : null,
+          diasInventario: valores.diasInventario ? Number(valores.diasInventario) : null,
         },
       });
       await registrarBitacora({

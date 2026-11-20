@@ -111,6 +111,7 @@ export async function clasificarFilas({ filas, mapeo }) {
         precioLista: Number(valores.precioLista),
         precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
         bono: valores.bono ? Number(valores.bono) : null,
+        diasInventario: valores.diasInventario ? Number(valores.diasInventario) : null,
         marcaId: marca.id,
         servicioId: servicio?.id ?? null,
       },
