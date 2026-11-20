@@ -221,7 +221,10 @@ describe('ImportadorRevision', () => {
     renderComo(ADMIN, <ImportadorRevision analisis={analisisConError} onConfirmar={onConfirmar} />);
 
     elegirUnidadNegocio('10');
-    fireEvent.change(screen.getByDisplayValue(''), { target: { value: 'Civic' } });
+    // La fila tiene dos columnas vacías (Modelo y Comentario, ambas "" porque
+    // ahora se muestran TODAS las columnas del archivo, no solo las
+    // reconocidas); Modelo es la primera en aparecer, en el orden del mapeo.
+    fireEvent.change(screen.getAllByDisplayValue('')[0], { target: { value: 'Civic' } });
     fireEvent.change(screen.getByLabelText(/fila 1.*marca/i), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: /confirmar importación/i }));
 

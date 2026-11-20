@@ -180,7 +180,12 @@ export function ImportadorRevision({ analisis, onConfirmar }) {
     onConfirmar({ mapeoFinal: mapeo, filasDecididas });
   }
 
-  const columnasConCampo = mapeo.filter((entrada) => entrada.campo && !CAMPOS_CATALOGO.includes(entrada.campo));
+  // Muestra SIEMPRE todas las columnas del archivo con sus valores en vivo,
+  // reconocidas o no — una cabecera que el mapeo automático no identificó
+  // nunca debe desaparecer de la vista: eso es justo lo que oculta datos.
+  // Las columnas resueltas contra catálogo (marca/servicio) se excluyen aquí
+  // porque ya tienen su propia celda de resolución más adelante.
+  const columnasVisibles = mapeo.filter((entrada) => !CAMPOS_CATALOGO.includes(entrada.campo));
 
   return (
     <div>
@@ -248,9 +253,10 @@ export function ImportadorRevision({ analisis, onConfirmar }) {
               <tr style={{ backgroundColor: '#251f1d' }}>
                 <th style={{ padding: '12px 16px', color: '#ffffff', fontSize: 10, fontWeight: 800, letterSpacing: '0.6px' }}>FILA</th>
                 <th style={{ padding: '12px 16px', color: '#ffffff', fontSize: 10, fontWeight: 800, letterSpacing: '0.6px' }}>ESTADO</th>
-                {columnasConCampo.map((entrada) => (
-                  <th key={entrada.columna} style={{ padding: '12px 16px', color: '#ffffff', fontSize: 10, fontWeight: 800, letterSpacing: '0.6px' }}>
+                {columnasVisibles.map((entrada) => (
+                  <th key={entrada.columna} style={{ padding: '12px 16px', color: entrada.campo ? '#ffffff' : '#fde68a', fontSize: 10, fontWeight: 800, letterSpacing: '0.6px' }}>
                     {entrada.columna}
+                    {!entrada.campo && <div style={{ fontWeight: 600, fontSize: 9, textTransform: 'none', letterSpacing: 0 }}>Sin asignar</div>}
                   </th>
                 ))}
                 <th style={{ padding: '12px 16px', color: '#ffffff', fontSize: 10, fontWeight: 800, letterSpacing: '0.6px' }}>MARCA / SERVICIO</th>
@@ -268,7 +274,7 @@ export function ImportadorRevision({ analisis, onConfirmar }) {
                         <div style={{ fontSize: 10, color: '#dc2626', marginTop: 4, maxWidth: 160 }}>{fila.motivoError}</div>
                       )}
                     </td>
-                    {columnasConCampo.map((entrada) => {
+                    {columnasVisibles.map((entrada) => {
                       const valor = datos[entrada.columna] ?? '';
                       return (
                         <td key={entrada.columna} style={{ padding: '10px 16px' }}>
