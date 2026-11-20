@@ -226,6 +226,8 @@ model Vehiculo {
   km              Int
   vin             String?           @unique
   transmision     String?
+  colorExterior   String?           @map("color_exterior")
+  colorInterior   String?           @map("color_interior")
   marcaId         Int               @map("marca_id")
   unidadNegocioId Int               @map("unidad_negocio_id")
   servicioId      Int?              @map("servicio_id")

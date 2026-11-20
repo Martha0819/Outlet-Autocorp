@@ -59,7 +59,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, modelo, anio, km, vin, transmision, marcaId, servicioId, precioSinIva, precioLista, precioRemate, bono, diasInventario } = body;
+  const { nombre, modelo, anio, km, vin, transmision, colorExterior, colorInterior, marcaId, servicioId, precioSinIva, precioLista, precioRemate, bono, diasInventario } = body;
   // Un no-Administrador solo puede crear vehículos en su propia unidad.
   const unidadNegocioId = esAdministrador(auth.usuario) ? body.unidadNegocioId : auth.usuario.unidadNegocioId;
 
@@ -82,6 +82,8 @@ export async function POST(request) {
         km: Number(km) || 0,
         vin: vin?.trim() ? vin.trim() : null,
         transmision: transmision?.trim() ? transmision.trim() : null,
+        colorExterior: colorExterior?.trim() ? colorExterior.trim() : null,
+        colorInterior: colorInterior?.trim() ? colorInterior.trim() : null,
         marcaId: Number(marcaId),
         unidadNegocioId: Number(unidadNegocioId),
         servicioId: servicioId ? Number(servicioId) : null,

@@ -25,6 +25,8 @@ export async function PATCH(request, { params }) {
   }
   if (body.vin !== undefined) data.vin = body.vin === '' ? null : body.vin;
   if (body.transmision !== undefined) data.transmision = body.transmision === '' ? null : body.transmision;
+  if (body.colorExterior !== undefined) data.colorExterior = body.colorExterior === '' ? null : body.colorExterior;
+  if (body.colorInterior !== undefined) data.colorInterior = body.colorInterior === '' ? null : body.colorInterior;
   if (body.diasInventario !== undefined) {
     data.diasInventario = body.diasInventario === '' || body.diasInventario === null ? null : Number(body.diasInventario);
   }

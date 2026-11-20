@@ -49,7 +49,7 @@ const selectPillStyle = {
 };
 
 function emptyForm() {
-  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', marcaId: '', unidadNegocioId: '', servicioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '', diasInventario: '' };
+  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', colorExterior: '', colorInterior: '', marcaId: '', unidadNegocioId: '', servicioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '', diasInventario: '' };
 }
 
 // "Fecha de ingreso" nunca se guarda: se calcula a partir de diasInventario
@@ -160,6 +160,8 @@ export function InventarioView() {
       km: v.km,
       vin: v.vin || '',
       transmision: v.transmision || '',
+      colorExterior: v.colorExterior || '',
+      colorInterior: v.colorInterior || '',
       marcaId: v.marcaId,
       unidadNegocioId: v.unidadNegocioId,
       servicioId: v.servicioId ?? '',
@@ -283,6 +285,8 @@ export function InventarioView() {
             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" placeholder="Año" value={newForm.anio} onChange={(e) => setNewForm({ ...newForm, anio: e.target.value })} /></div>
             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" placeholder="Km" value={newForm.km} onChange={(e) => setNewForm({ ...newForm, km: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Transmisión (opcional)" value={newForm.transmision} onChange={(e) => setNewForm({ ...newForm, transmision: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="Color exterior" value={newForm.colorExterior} onChange={(e) => setNewForm({ ...newForm, colorExterior: e.target.value })} /></div>
+            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="Color interior" value={newForm.colorInterior} onChange={(e) => setNewForm({ ...newForm, colorInterior: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}>
               <select style={inputStyle} value={newForm.marcaId} onChange={(e) => setNewForm({ ...newForm, marcaId: e.target.value })}>
                 <option value="">Marca…</option>
@@ -361,6 +365,8 @@ export function InventarioView() {
                             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" value={editForm.anio} onChange={(e) => setEditForm({ ...editForm, anio: e.target.value })} /></div>
                             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" value={editForm.km} onChange={(e) => setEditForm({ ...editForm, km: e.target.value })} /></div>
                             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} value={editForm.transmision} onChange={(e) => setEditForm({ ...editForm, transmision: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="Color exterior" value={editForm.colorExterior} onChange={(e) => setEditForm({ ...editForm, colorExterior: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="Color interior" value={editForm.colorInterior} onChange={(e) => setEditForm({ ...editForm, colorInterior: e.target.value })} /></div>
                             <div style={{ flex: '1 1 140px' }}>
                               <select style={inputStyle} value={editForm.marcaId} onChange={(e) => setEditForm({ ...editForm, marcaId: e.target.value })}>
                                 {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
@@ -408,6 +414,13 @@ export function InventarioView() {
                         <div style={{ fontSize: 11, color: '#8e8784', marginTop: 4 }}>
                           {v.vin || 'Sin VIN'}{v.servicio?.nombre ? ` · ${v.servicio.nombre}` : ' · Sin servicio'}
                         </div>
+                        {(v.colorExterior || v.colorInterior) && (
+                          <div style={{ fontSize: 11, color: '#8e8784', marginTop: 2 }}>
+                            {v.colorExterior ? `Ext: ${v.colorExterior}` : ''}
+                            {v.colorExterior && v.colorInterior ? ' · ' : ''}
+                            {v.colorInterior ? `Int: ${v.colorInterior}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>
                         <strong>{v.anio}</strong> <span style={{ color: '#8e8784' }}>· {formatNumber(v.km)} km</span>

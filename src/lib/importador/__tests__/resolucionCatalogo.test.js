@@ -105,6 +105,33 @@ describe('clasificarFilas', () => {
     expect(resultado.valoresResueltos.diasInventario).toBeNull();
   });
 
+  it('resuelve colorExterior y colorInterior cuando las columnas están mapeadas', async () => {
+    const mapeoConColores = [
+      ...MAPEO_BASE,
+      { columna: 'ColorExt', campo: 'colorExterior' },
+      { columna: 'ColorInt', campo: 'colorInterior' },
+    ];
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ ColorExt: 'Blanco', ColorInt: 'Negro' })],
+      mapeo: mapeoConColores,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.colorExterior).toBe('Blanco');
+    expect(resultado.valoresResueltos.colorInterior).toBe('Negro');
+  });
+
+  it('sin columnas de color mapeadas, la fila queda "lista" con los colores en null', async () => {
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase()],
+      mapeo: MAPEO_BASE,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.colorExterior).toBeNull();
+    expect(resultado.valoresResueltos.colorInterior).toBeNull();
+  });
+
   it('resuelve diasInventario como entero cuando la columna está mapeada', async () => {
     const mapeoConDias = [...MAPEO_BASE, { columna: 'DiasInventario', campo: 'diasInventario' }];
     const [resultado] = await clasificarFilas({

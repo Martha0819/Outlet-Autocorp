@@ -107,6 +107,8 @@ export async function clasificarFilas({ filas, mapeo }) {
         km: valores.km ? Number(valores.km) : 0,
         vin,
         transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
+        colorExterior: valores.colorExterior?.trim() ? valores.colorExterior.trim() : null,
+        colorInterior: valores.colorInterior?.trim() ? valores.colorInterior.trim() : null,
         precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
         precioLista: Number(valores.precioLista),
         precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,

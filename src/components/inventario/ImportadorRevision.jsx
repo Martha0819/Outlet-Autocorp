@@ -22,6 +22,8 @@ const CAMPOS_MAPEO = [
   { valor: 'km', etiqueta: 'Km' },
   { valor: 'vin', etiqueta: 'VIN' },
   { valor: 'transmision', etiqueta: 'Transmisión' },
+  { valor: 'colorExterior', etiqueta: 'Color exterior' },
+  { valor: 'colorInterior', etiqueta: 'Color interior' },
   { valor: 'marca', etiqueta: 'Marca' },
   { valor: 'servicio', etiqueta: 'Servicio' },
   { valor: 'precioSinIva', etiqueta: 'Precio sin IVA' },

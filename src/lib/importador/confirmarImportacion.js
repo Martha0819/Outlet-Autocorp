@@ -84,6 +84,8 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           km: valores.km ? Number(valores.km) : 0,
           vin,
           transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
+          colorExterior: valores.colorExterior?.trim() ? valores.colorExterior.trim() : null,
+          colorInterior: valores.colorInterior?.trim() ? valores.colorInterior.trim() : null,
           marcaId: fila.marcaId,
           unidadNegocioId: fila.unidadNegocioId,
           servicioId: fila.servicioId ?? null,

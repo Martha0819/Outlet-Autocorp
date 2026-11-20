@@ -7,6 +7,8 @@ const SINONIMOS_POR_CAMPO = {
   km: ['km', 'kilometraje', 'kilometros'],
   vin: ['vin'],
   transmision: ['transmision'],
+  colorExterior: ['color ext', 'color exterior', 'colorext', 'colorexterior'],
+  colorInterior: ['color int', 'color interior', 'colorint', 'colorinterior'],
   marca: ['marca', 'brand'],
   servicio: ['unidad', 'linea de negocio', 'lineadenegocio', 'tipo de unidad', 'servicio'],
   precioSinIva: ['precio sin iva', 'preciosiniva', 'precio neto'],

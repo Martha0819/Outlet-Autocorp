@@ -28,6 +28,16 @@ describe('sugerirMapeo', () => {
     ]);
   });
 
+  it('reconoce las columnas de color exterior e interior', () => {
+    const mapeo = sugerirMapeo(['Modelo', 'Color ext.', 'Color int.']);
+
+    expect(mapeo).toEqual([
+      { columna: 'Modelo', campo: 'modelo' },
+      { columna: 'Color ext.', campo: 'colorExterior' },
+      { columna: 'Color int.', campo: 'colorInterior' },
+    ]);
+  });
+
   it('deja sin asignar una columna que no corresponde a ningún campo del catálogo', () => {
     const mapeo = sugerirMapeo(['Modelo', 'Comentario interno']);
 
