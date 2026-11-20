@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNotify } from '@/store/features/ui/useNotify';
-import { formatDate, getInitials, getTodayISO } from '@/lib/utils';
+import { formatDate, formatDateRange, getInitials, getTodayISO } from '@/lib/utils';
 import { useGetUsuariosQuery } from '@/store/features/usuarios/usuarioApiSlice';
 import { useGetCatalogoQuery } from '@/store/features/catalogos/catalogoApiSlice';
 import {
@@ -238,6 +238,7 @@ export function GuardiasView() {
       asesorCorreo: '',
       asesorTelefono: '',
       fecha: defaultDate,
+      fechaFin: '',
       horarioInicio: '09:00',
       horarioFin: '15:00',
       turnoId: turnos[0]?.id ? String(turnos[0].id) : '',
@@ -253,6 +254,7 @@ export function GuardiasView() {
       asesorCorreo: g.asesorCorreo || g.usuario?.email || '',
       asesorTelefono: g.asesorTelefono || '',
       fecha: toDateStr(g.fecha) || '2026-11-20',
+      fechaFin: toDateStr(g.fechaFin),
       horarioInicio: toTimeStr(g.horarioInicio) || '09:00',
       horarioFin: toTimeStr(g.horarioFin) || '15:00',
       turnoId: g.turnoId ? String(g.turnoId) : '',
@@ -273,6 +275,7 @@ export function GuardiasView() {
       asesorCorreo: shiftForm.asesorCorreo.trim() || null,
       asesorTelefono: shiftForm.asesorTelefono.trim() || null,
       fecha: shiftForm.fecha,
+      fechaFin: shiftForm.fechaFin || null,
       horarioInicio: shiftForm.horarioInicio,
       horarioFin: shiftForm.horarioFin,
       turnoId: Number(shiftForm.turnoId),
@@ -297,7 +300,7 @@ export function GuardiasView() {
 
   const handleDeleteShift = async (g) => {
     const nombre = g.asesorNombre || g.usuario?.nombre || 'usuario';
-    if (!confirm(`¿Eliminar la guardia de ${nombre} del ${formatDate(g.fecha, 'short')}?`)) return;
+    if (!confirm(`¿Eliminar la guardia de ${nombre} del ${formatDateRange(g.fecha, g.fechaFin)}?`)) return;
     try {
       await deleteGuardia(g.id).unwrap();
       notify('Guardia eliminada');
@@ -313,6 +316,7 @@ export function GuardiasView() {
       responsableNombre: '',
       responsableId: '',
       fecha: '2026-11-20',
+      fechaFin: '',
       horario: '10:00',
       estatus: 'PENDIENTE',
       observaciones: '',
@@ -326,6 +330,7 @@ export function GuardiasView() {
       responsableNombre: act.responsableNombre || act.responsable?.nombre || '',
       responsableId: act.responsableId ? String(act.responsableId) : '',
       fecha: toDateStr(act.fecha) || '2026-11-20',
+      fechaFin: toDateStr(act.fechaFin),
       horario: toTimeStr(act.horario) || '10:00',
       estatus: act.estatus || 'PENDIENTE',
       observaciones: act.observaciones || '',
@@ -344,6 +349,7 @@ export function GuardiasView() {
       responsableNombre: actForm.responsableNombre.trim() || null,
       responsableId: actForm.responsableId ? Number(actForm.responsableId) : null,
       fecha: actForm.fecha,
+      fechaFin: actForm.fechaFin || null,
       horario: actForm.horario,
       estatus: actForm.estatus || 'PENDIENTE',
       observaciones: actForm.observaciones,
@@ -938,7 +944,7 @@ export function GuardiasView() {
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0edeb', paddingTop: '10px', fontSize: '11px', color: '#8e8784' }}>
-                          <span>🕒 {toTimeStr(act.horario)} · {formatDate(act.fecha, 'short')}</span>
+                          <span>🕒 {toTimeStr(act.horario)} · {formatDateRange(act.fecha, act.fechaFin)}</span>
                           <span style={{ fontSize: '14px' }}>⇅</span>
                         </div>
                       </div>
@@ -1139,6 +1145,19 @@ export function GuardiasView() {
                 </div>
               </div>
 
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Fecha de fin (opcional, si la guardia dura varios días)
+                </label>
+                <input
+                  type="date"
+                  style={inputStyle}
+                  value={shiftForm.fechaFin}
+                  min={shiftForm.fecha || undefined}
+                  onChange={(e) => setShiftForm({ ...shiftForm, fechaFin: e.target.value })}
+                />
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
@@ -1300,6 +1319,19 @@ export function GuardiasView() {
 
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Fecha de fin (opcional, si la actividad dura varios días)
+                </label>
+                <input
+                  type="date"
+                  style={inputStyle}
+                  value={actForm.fechaFin}
+                  min={actForm.fecha || undefined}
+                  onChange={(e) => setActForm({ ...actForm, fechaFin: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
                   Observaciones / Instrucciones
                 </label>
                 <textarea
@@ -1409,7 +1441,7 @@ export function GuardiasView() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#251f1d' }}>
               <span style={{ color: '#ff8901', fontSize: '14px' }}>📅</span>
               <span>
-                <strong>Fecha:</strong> {formatDate(popoverData.shift.fecha, 'long')}
+                <strong>Fecha:</strong> {formatDateRange(popoverData.shift.fecha, popoverData.shift.fechaFin, 'long')}
               </span>
             </div>
 

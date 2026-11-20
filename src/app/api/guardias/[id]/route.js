@@ -31,6 +31,7 @@ export async function PATCH(request, { params }) {
   if (body.asesorTelefono !== undefined) data.asesorTelefono = body.asesorTelefono?.trim() || null;
   if (body.turnoId !== undefined) data.turnoId = Number(body.turnoId);
   if (body.fecha !== undefined) data.fecha = new Date(body.fecha);
+  if (body.fechaFin !== undefined) data.fechaFin = body.fechaFin ? new Date(body.fechaFin) : null;
   if (body.horarioInicio !== undefined) data.horarioInicio = body.horarioInicio ? new Date(`1970-01-01T${body.horarioInicio}:00Z`) : null;
   if (body.horarioFin !== undefined) data.horarioFin = body.horarioFin ? new Date(`1970-01-01T${body.horarioFin}:00Z`) : null;
   if (body.area !== undefined) data.area = body.area?.trim() ? body.area.trim() : null;

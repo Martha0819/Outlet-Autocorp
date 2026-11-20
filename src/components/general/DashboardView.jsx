@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useNotify } from '@/store/features/ui/useNotify';
-import { formatCurrency, formatNumber, formatDate, getInitials } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatDate, formatDateRange, getInitials } from '@/lib/utils';
 import { useGetVehiculosQuery } from '@/store/features/vehiculos/vehiculoApiSlice';
 import { useGetClientesQuery, useCreateClienteMutation } from '@/store/features/clientes/clienteApiSlice';
 import { useGetUsuariosQuery } from '@/store/features/usuarios/usuarioApiSlice';
@@ -696,7 +696,7 @@ export function DashboardView() {
                   <div className="upcoming-item" key={g.id}>
                     <div className="upcoming-time-col">
                       <span className="upcoming-time">{toTimeStr(g.horarioInicio)}</span>
-                      <span className="upcoming-date">{formatDate(g.fecha, 'short')}</span>
+                      <span className="upcoming-date">{formatDateRange(g.fecha, g.fechaFin, 'short')}</span>
                     </div>
                     <div className="upcoming-main-col">
                       <h4 className="upcoming-title">{g.usuario?.nombre || 'Asesor'}</h4>
@@ -807,7 +807,7 @@ export function DashboardView() {
                     <div className="upcoming-item" key={act.id}>
                       <div className="upcoming-time-col">
                         <span className="upcoming-time">{toTimeStr(act.horario)}</span>
-                        <span className="upcoming-date">{formatDate(act.fecha, 'short')}</span>
+                        <span className="upcoming-date">{formatDateRange(act.fecha, act.fechaFin, 'short')}</span>
                       </div>
                       <div className="upcoming-main-col">
                         <h4 className="upcoming-title">{act.nombre}</h4>

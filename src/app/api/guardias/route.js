@@ -47,7 +47,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { usuarioId, asesorNombre, asesorCorreo, asesorTelefono, fecha, horarioInicio, horarioFin, turnoId, area } = body;
+  const { usuarioId, asesorNombre, asesorCorreo, asesorTelefono, fecha, fechaFin, horarioInicio, horarioFin, turnoId, area } = body;
 
   const nombreFinal = asesorNombre?.trim() || '';
   if ((!usuarioId && !nombreFinal) || !fecha || !turnoId) {
@@ -68,6 +68,7 @@ export async function POST(request) {
       asesorCorreo: asesorCorreo?.trim() || null,
       asesorTelefono: asesorTelefono?.trim() || null,
       fecha: new Date(fecha),
+      fechaFin: fechaFin ? new Date(fechaFin) : null,
       horarioInicio: horarioInicio ? new Date(`1970-01-01T${horarioInicio}:00Z`) : null,
       horarioFin: horarioFin ? new Date(`1970-01-01T${horarioFin}:00Z`) : null,
       turnoId: Number(turnoId),

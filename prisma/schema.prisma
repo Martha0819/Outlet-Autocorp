@@ -171,6 +171,9 @@ model Guardia {
   asesorCorreo   String?   @map("asesor_correo")
   asesorTelefono String?   @map("asesor_telefono")
   fecha          DateTime  @db.Date
+  // Opcional: si la guardia dura más de un día, fechaFin marca el último.
+  // Sin fechaFin, es una guardia de un solo día (fecha), igual que siempre.
+  fechaFin       DateTime? @map("fecha_fin") @db.Date
   horarioInicio  DateTime? @map("horario_inicio") @db.Time
   horarioFin     DateTime? @map("horario_fin") @db.Time
   turnoId        Int       @map("turno_id")
@@ -195,6 +198,9 @@ model Actividad {
   id                Int               @id @default(autoincrement())
   nombre            String
   fecha             DateTime          @db.Date
+  // Opcional: si la actividad dura más de un día, fechaFin marca el último.
+  // Sin fechaFin, es una actividad de un solo día (fecha), igual que siempre.
+  fechaFin          DateTime?         @map("fecha_fin") @db.Date
   horario           DateTime          @db.Time
   unidadNegocioId   Int?              @map("unidad_negocio_id")
   responsableId     Int?              @map("responsable_id")

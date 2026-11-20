@@ -25,6 +25,7 @@ export async function PATCH(request, { params }) {
 
   if (body.nombre !== undefined) data.nombre = body.nombre;
   if (body.fecha !== undefined) data.fecha = new Date(body.fecha);
+  if (body.fechaFin !== undefined) data.fechaFin = body.fechaFin ? new Date(body.fechaFin) : null;
   if (body.horario !== undefined) data.horario = new Date(`1970-01-01T${body.horario}:00Z`);
   // Solo Administrador puede reasignar la unidad (incluido dejarla null).
   if (body.unidadNegocioId !== undefined && esAdministrador(auth.usuario)) {

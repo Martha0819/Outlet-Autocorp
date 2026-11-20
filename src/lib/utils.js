@@ -66,6 +66,17 @@ export function formatDate(dateStr, format = 'short') {
   return date.toLocaleDateString('es-MX');
 }
 
+// Para eventos/guardias de un solo día (fechaFin vacío o igual a fecha),
+// muestra solo la fecha de inicio; si abarca varios días, muestra el rango.
+export function formatDateRange(fecha, fechaFin, format = 'short') {
+  const inicio = formatDate(fecha, format);
+  if (!fechaFin) return inicio;
+  const finStr = typeof fechaFin === 'string' ? fechaFin.slice(0, 10) : fechaFin;
+  const inicioStr = typeof fecha === 'string' ? fecha.slice(0, 10) : fecha;
+  if (finStr === inicioStr) return inicio;
+  return `${inicio} – ${formatDate(fechaFin, format)}`;
+}
+
 export function getTodayISO() {
   const now = new Date();
   const year = now.getFullYear();
