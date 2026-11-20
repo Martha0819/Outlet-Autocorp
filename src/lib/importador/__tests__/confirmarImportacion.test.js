@@ -8,14 +8,13 @@ const MAPEO_BASE = [
   { columna: 'Descripcion', campo: 'nombre' },
   { columna: 'Anio', campo: 'anio' },
   { columna: 'Transmision', campo: 'transmision' },
-  { columna: 'Condicion', campo: 'condicion' },
   { columna: 'VIN', campo: 'vin' },
   { columna: 'PrecioLista', campo: 'precioLista' },
 ];
 
 function filaDecidida(catalogo, overrides = {}) {
   return {
-    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', Condicion: 'SEMINUEVO', VIN: '', PrecioLista: '250000' },
+    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', VIN: '', PrecioLista: '250000' },
     decision: 'importar',
     marcaId: catalogo.nissan.id,
     unidadNegocioId: catalogo.matriz.id,
@@ -63,7 +62,7 @@ describe('confirmarFilas', () => {
 
   it('una fila que falla al confirmar (VIN duplicado) no revierte las demás filas ya creadas en la misma corrida', async () => {
     await prisma.vehiculo.create({
-      data: { nombre: 'Ya existente', modelo: 'Sentra', anio: 2019, km: 0, vin: 'VIN-DUP', transmision: 'Manual', condicion: 'SEMINUEVO', marcaId: catalogo.nissan.id, unidadNegocioId: catalogo.matriz.id },
+      data: { nombre: 'Ya existente', modelo: 'Sentra', anio: 2019, km: 0, vin: 'VIN-DUP', transmision: 'Manual', marcaId: catalogo.nissan.id, unidadNegocioId: catalogo.matriz.id },
     });
 
     const filas = [
@@ -96,22 +95,6 @@ describe('confirmarFilas', () => {
     expect(vehiculos).toHaveLength(0);
   });
 
-  it('una fila con un valor inválido para un campo enum (condición) no revienta el lote: queda como error, las demás filas válidas se importan', async () => {
-    const filas = [
-      filaDecidida(catalogo, { datosOriginales: { ...filaDecidida(catalogo).datosOriginales, Condicion: 'Usado', VIN: 'VIN-INVALIDA' } }),
-      filaDecidida(catalogo, { datosOriginales: { ...filaDecidida(catalogo).datosOriginales, Modelo: 'Civic', VIN: 'VIN-VALIDA' } }),
-    ];
-
-    const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: filas, usuarioActual: administrador });
-
-    expect(resumen.importados.cuenta).toBe(1);
-    expect(resumen.conError.cuenta).toBe(1);
-    expect(resumen.conError.lista[0].motivo).toMatch(/condición inválida/i);
-
-    const vehiculos = await prisma.vehiculo.findMany({ where: { vin: 'VIN-VALIDA' } });
-    expect(vehiculos).toHaveLength(1);
-  });
-
   it('reporta en el resumen el motivo de una fila ya descartada desde el análisis (motivoDescartado)', async () => {
     const filas = [{ datosOriginales: { Modelo: '' }, decision: 'descartar', motivoDescartado: 'campo obligatorio faltante: modelo' }];
 
@@ -130,6 +113,18 @@ describe('confirmarFilas', () => {
     const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: filas, usuarioActual: administrador });
 
     expect(resumen.resueltosManualmente).toBe(1);
+  });
+
+  it('importa una fila y guarda el servicioId resuelto', async () => {
+    const filas = [filaDecidida(catalogo, { servicioId: catalogo.nuevos.id, datosOriginales: { ...filaDecidida(catalogo).datosOriginales, VIN: 'VIN-SERVICIO' } })];
+
+    const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: filas, usuarioActual: administrador });
+
+    expect(resumen.importados.cuenta).toBe(1);
+    expect(resumen.conError.cuenta).toBe(0);
+
+    const vehiculo = await prisma.vehiculo.findUnique({ where: { vin: 'VIN-SERVICIO' } });
+    expect(vehiculo.servicioId).toBe(catalogo.nuevos.id);
   });
 
   it('rechaza una fila "importar" sin precio de lista', async () => {

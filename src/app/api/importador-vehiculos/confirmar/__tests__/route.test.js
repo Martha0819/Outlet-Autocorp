@@ -9,14 +9,13 @@ const MAPEO_FINAL = [
   { columna: 'Descripcion', campo: 'nombre' },
   { columna: 'Anio', campo: 'anio' },
   { columna: 'Transmision', campo: 'transmision' },
-  { columna: 'Condicion', campo: 'condicion' },
   { columna: 'VIN', campo: 'vin' },
   { columna: 'Precio', campo: 'precioLista' },
 ];
 
 function filaBase(overrides = {}) {
   return {
-    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', Condicion: 'SEMINUEVO', VIN: 'VIN-E2E', Precio: '250000' },
+    datosOriginales: { Modelo: 'Sentra', Descripcion: 'Auto seminuevo', Anio: '2020', Transmision: 'Automatica', VIN: 'VIN-E2E', Precio: '250000' },
     decision: 'importar',
     resueltoManualmente: false,
     ...overrides,

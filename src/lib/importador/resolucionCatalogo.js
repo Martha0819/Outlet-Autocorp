@@ -1,16 +1,14 @@
 import { prisma } from '@/lib/prisma';
 import { normalizarTexto } from './normalizar';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion', 'marca', 'unidadNegocio', 'precioLista'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'marca', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
   nombre: 'descripción',
   anio: 'año',
   transmision: 'transmisión',
-  condicion: 'condición',
   marca: 'marca',
-  unidadNegocio: 'unidad de negocio',
   precioLista: 'precio de lista',
 };
 
@@ -31,10 +29,13 @@ function encontrarPorNombre(entradas, nombreBuscado) {
   return entradas.find((entrada) => normalizarTexto(entrada.nombre) === normalizado);
 }
 
-export async function clasificarFilas({ filas, mapeo, usuarioActual }) {
-  const [marcas, unidadesNegocio] = await Promise.all([
+// La unidad de negocio NO se resuelve por fila: todo el archivo pertenece a
+// una sola unidad, elegida una vez en la pantalla de revisión (no varía
+// fila por fila como marca o servicio).
+export async function clasificarFilas({ filas, mapeo }) {
+  const [marcas, servicios] = await Promise.all([
     prisma.marca.findMany(),
-    prisma.unidadNegocio.findMany(),
+    prisma.lineaNegocio.findMany(),
   ]);
 
   // Un solo viaje a la base para todos los VIN del archivo, en vez de uno por
@@ -70,30 +71,24 @@ export async function clasificarFilas({ filas, mapeo, usuarioActual }) {
     }
 
     const marca = encontrarPorNombre(marcas, valores.marca);
-    const unidadNegocio = encontrarPorNombre(unidadesNegocio, valores.unidadNegocio);
 
     if (!marca) {
       resultado.push({
         datosOriginales: filaCruda,
         estado: 'pendiente-marca',
         candidatosResolucion: marcas,
-        unidadNegocioIdResuelto: unidadNegocio?.id ?? null,
       });
       continue;
     }
 
-    if (!unidadNegocio) {
+    const servicio = valores.servicio?.trim() ? encontrarPorNombre(servicios, valores.servicio) : null;
+    if (valores.servicio?.trim() && !servicio) {
       resultado.push({
         datosOriginales: filaCruda,
-        estado: 'pendiente-unidadNegocio',
-        candidatosResolucion: unidadesNegocio,
+        estado: 'pendiente-servicio',
+        candidatosResolucion: servicios,
         marcaIdResuelto: marca.id,
       });
-      continue;
-    }
-
-    if (!usuarioActual.esAdministrador && unidadNegocio.id !== usuarioActual.unidadNegocioId) {
-      resultado.push({ datosOriginales: filaCruda, estado: 'error', motivoError: 'unidad de negocio no permitida para este usuario' });
       continue;
     }
 
@@ -113,13 +108,12 @@ export async function clasificarFilas({ filas, mapeo, usuarioActual }) {
         km: valores.km ? Number(valores.km) : 0,
         vin,
         transmision: valores.transmision,
-        condicion: valores.condicion,
         precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
         precioLista: Number(valores.precioLista),
         precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
         bono: valores.bono ? Number(valores.bono) : null,
         marcaId: marca.id,
-        unidadNegocioId: unidadNegocio.id,
+        servicioId: servicio?.id ?? null,
       },
     });
   }

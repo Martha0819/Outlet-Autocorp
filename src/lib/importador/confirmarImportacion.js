@@ -1,15 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'condicion', 'precioLista'];
-const CONDICIONES_VALIDAS = ['NUEVO', 'SEMINUEVO'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
   nombre: 'descripción',
   anio: 'año',
   transmision: 'transmisión',
-  condicion: 'condición',
   precioLista: 'precio de lista',
 };
 
@@ -53,11 +51,6 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
       continue;
     }
 
-    if (!CONDICIONES_VALIDAS.includes(String(valores.condicion ?? '').toUpperCase())) {
-      conError.push({ datosOriginales: fila.datosOriginales, motivo: `condición inválida: debe ser ${CONDICIONES_VALIDAS.join(' o ')}` });
-      continue;
-    }
-
     const precioLista = Number(valores.precioLista);
     if (!Number.isFinite(precioLista) || precioLista <= 0) {
       conError.push({ datosOriginales: fila.datosOriginales, motivo: 'precio de lista no numérico' });
@@ -92,9 +85,9 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           km: valores.km ? Number(valores.km) : 0,
           vin,
           transmision: valores.transmision,
-          condicion: String(valores.condicion).toUpperCase(),
           marcaId: fila.marcaId,
           unidadNegocioId: fila.unidadNegocioId,
+          servicioId: fila.servicioId ?? null,
           precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
           precioLista,
           precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,

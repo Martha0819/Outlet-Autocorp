@@ -20,11 +20,15 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
   const data = {};
 
-  for (const field of ['nombre', 'modelo', 'transmision', 'condicion', 'estatus', 'vin']) {
-    if (body[field] !== undefined) data[field] = body[field] === '' && field === 'vin' ? null : body[field];
+  for (const field of ['nombre', 'modelo', 'transmision', 'estatus']) {
+    if (body[field] !== undefined) data[field] = body[field];
   }
+  if (body.vin !== undefined) data.vin = body.vin === '' ? null : body.vin;
   for (const field of ['anio', 'km', 'marcaId']) {
     if (body[field] !== undefined) data[field] = Number(body[field]);
+  }
+  if (body.servicioId !== undefined) {
+    data.servicioId = body.servicioId === '' || body.servicioId === null ? null : Number(body.servicioId);
   }
   // Un no-Administrador no puede mover un vehículo a otra unidad.
   if (body.unidadNegocioId !== undefined && esAdministrador(auth.usuario)) {
@@ -50,7 +54,7 @@ export async function PATCH(request, { params }) {
     const vehiculo = await prisma.vehiculo.update({
       where: { id: Number(params.id) },
       data,
-      include: { marca: true, unidadNegocio: true },
+      include: { marca: true, unidadNegocio: true, servicio: true },
     });
     await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'editar', recurso: 'vehiculo', recursoId: vehiculo.id, detalle: JSON.stringify(Object.keys(data)) });
     return Response.json(vehiculo);

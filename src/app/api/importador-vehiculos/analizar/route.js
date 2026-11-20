@@ -25,13 +25,20 @@ export async function POST(request) {
   }
 
   const mapeoSugerido = sugerirMapeo(resultadoParseo.cabeceras);
-  const usuarioActual = { esAdministrador: esAdministrador(auth.usuario), unidadNegocioId: auth.usuario.unidadNegocioId };
-  const filas = await clasificarFilas({ filas: resultadoParseo.filas, mapeo: mapeoSugerido, usuarioActual });
+  const filas = await clasificarFilas({ filas: resultadoParseo.filas, mapeo: mapeoSugerido });
 
   // Se incluye el catálogo completo (no solo los candidatos de la fila) porque
-  // una fila "pendiente-marca" puede además tener su unidad de negocio sin
-  // resolver, y la pantalla necesita ofrecer ambas resoluciones.
-  const [marcas, unidadesNegocio] = await Promise.all([prisma.marca.findMany(), prisma.unidadNegocio.findMany()]);
+  // una fila "pendiente-marca" puede tener varios candidatos para elegir.
+  const [marcas, unidadesNegocio, lineasNegocio] = await Promise.all([
+    prisma.marca.findMany(),
+    prisma.unidadNegocio.findMany(),
+    prisma.lineaNegocio.findMany(),
+  ]);
 
-  return Response.json({ mapeoSugerido, filas, catalogo: { marcas, unidadesNegocio } });
+  // La unidad de negocio es una sola para todo el archivo (no varía por
+  // fila): la pantalla de revisión la pide una vez, bloqueada a la propia
+  // si el usuario no es administrador.
+  const usuarioActual = { esAdministrador: esAdministrador(auth.usuario), unidadNegocioId: auth.usuario.unidadNegocioId };
+
+  return Response.json({ mapeoSugerido, filas, catalogo: { marcas, unidadesNegocio, lineasNegocio }, usuarioActual });
 }

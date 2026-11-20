@@ -3,7 +3,7 @@ import { toQueryString } from '@/lib/pagination';
 
 export const vehiculoApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // params: { page, pageSize, estatus, marcaId, condicion, q }
+    // params: { page, pageSize, estatus, marcaId, servicioId, q }
     getVehiculos: builder.query({
       query: (params) => `/vehiculos${toQueryString(params)}`,
       providesTags: ['Vehiculo'],
