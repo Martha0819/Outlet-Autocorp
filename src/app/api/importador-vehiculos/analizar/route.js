@@ -13,15 +13,22 @@ export async function POST(request) {
   if (!archivo) {
     return Response.json({ error: 'Falta el archivo a importar' }, { status: 400 });
   }
+  const hoja = formData.get('hoja') || undefined;
 
   const contenido = Buffer.from(await archivo.arrayBuffer());
-  const resultadoParseo = await parsearArchivo({ nombreArchivo: archivo.name, contenido });
+  const resultadoParseo = await parsearArchivo({ nombreArchivo: archivo.name, contenido, hoja });
 
   if (resultadoParseo.tipo === 'FormatoNoSoportado') {
     return Response.json({ error: 'Formato no soportado. Solo se aceptan archivos CSV o Excel (.xlsx).' }, { status: 400 });
   }
   if (resultadoParseo.tipo === 'ArchivoVacio') {
     return Response.json({ error: 'El archivo no tiene filas para importar.' }, { status: 400 });
+  }
+  // El archivo tiene varias hojas: nunca se combinan ni se adivina cuál usar.
+  // Se le devuelve al frontend la lista para que el usuario elija una, y esa
+  // elección vuelve a esta misma ruta en una segunda llamada con `hoja`.
+  if (resultadoParseo.tipo === 'RequiereHoja') {
+    return Response.json({ requiereHoja: true, hojas: resultadoParseo.hojas, hojaActiva: resultadoParseo.hojaActiva });
   }
 
   const mapeoSugerido = sugerirMapeo(resultadoParseo.cabeceras);

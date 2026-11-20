@@ -32,6 +32,12 @@ function archivoCsv() {
   return new File(['Modelo\nSentra\n'], 'lote.csv', { type: 'text/csv' });
 }
 
+function archivoXlsx() {
+  return new File(['contenido-xlsx-simulado'], 'lote.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+const REQUIERE_HOJA = { requiereHoja: true, hojas: ['Plantilla', 'Noviembre'], hojaActiva: 'Noviembre' };
+
 describe('ImportadorInventario', () => {
   beforeEach(() => {
     global.fetch = vi.fn();
@@ -59,5 +65,29 @@ describe('ImportadorInventario', () => {
 
     await waitFor(() => expect(screen.getByText('Resumen de la importación')).toBeInTheDocument());
     expect(onImportacionCompleta).toHaveBeenCalledWith(RESUMEN);
+  });
+
+  it('con un archivo de varias hojas, pide elegir una y la analiza sin mezclar las demás', async () => {
+    global.fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => REQUIERE_HOJA })
+      .mockResolvedValueOnce({ ok: true, json: async () => ANALISIS });
+
+    renderComoAdmin(<ImportadorInventario onImportacionCompleta={() => {}} />);
+
+    const input = screen.getByLabelText(/seleccionar archivo/i);
+    fireEvent.change(input, { target: { files: [archivoXlsx()] } });
+
+    await waitFor(() => expect(screen.getByText(/varias hojas/i)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /confirmar importación/i })).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/hoja a importar/i), { target: { value: 'Noviembre' } });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /confirmar importación/i })).toBeInTheDocument());
+
+    // La segunda llamada reutiliza el mismo archivo ya elegido y manda la hoja.
+    const segundaLlamada = global.fetch.mock.calls[1];
+    const formDataEnviado = segundaLlamada[1].body;
+    expect(formDataEnviado.get('hoja')).toBe('Noviembre');
+    expect(formDataEnviado.get('archivo').name).toBe('lote.xlsx');
   });
 });

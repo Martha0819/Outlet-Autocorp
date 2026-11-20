@@ -47,6 +47,49 @@ describe('parsearArchivo', () => {
     expect(resultado.tipo).toBe('ArchivoVacio');
   });
 
+  async function construirXlsxMultihoja() {
+    const libro = new ExcelJS.Workbook();
+    const plantillaVieja = libro.addWorksheet('Plantilla');
+    plantillaVieja.addRow(['#', 'VIN', 'VERSION', 'COMENTARIOS']);
+    plantillaVieja.addRow(['1', 'VIEJO123', 'Sentra viejo', '']);
+    const hojaReal = libro.addWorksheet('Noviembre');
+    hojaReal.addRow(['Modelo', 'Numero de serie', 'Anio']);
+    hojaReal.addRow(['Civic', 'REAL456', '2026']);
+    // La pestaña activa al guardar es la segunda (índice 1), no la primera.
+    libro.views = [{ activeTab: 1 }];
+    return Buffer.from(await libro.xlsx.writeBuffer());
+  }
+
+  it('con varias hojas y ninguna elegida, nunca adivina: pide elegir y nunca mezcla sus filas', async () => {
+    const contenido = await construirXlsxMultihoja();
+
+    const resultado = await parsearArchivo({ nombreArchivo: 'lote.xlsx', contenido });
+
+    expect(resultado.tipo).toBe('RequiereHoja');
+    expect(resultado.hojas).toEqual(['Plantilla', 'Noviembre']);
+    expect(resultado.hojaActiva).toBe('Noviembre');
+  });
+
+  it('con varias hojas y una elegida explícitamente, analiza solo esa hoja', async () => {
+    const contenido = await construirXlsxMultihoja();
+
+    const resultado = await parsearArchivo({ nombreArchivo: 'lote.xlsx', contenido, hoja: 'Noviembre' });
+
+    expect(resultado.tipo).toBe('ok');
+    expect(resultado.cabeceras).toEqual(['Modelo', 'Numero de serie', 'Anio']);
+    expect(resultado.filas).toEqual([{ Modelo: 'Civic', 'Numero de serie': 'REAL456', Anio: '2026' }]);
+  });
+
+  it('con varias hojas, elegir la otra hoja trae solo sus propias filas, sin mezclar', async () => {
+    const contenido = await construirXlsxMultihoja();
+
+    const resultado = await parsearArchivo({ nombreArchivo: 'lote.xlsx', contenido, hoja: 'Plantilla' });
+
+    expect(resultado.tipo).toBe('ok');
+    expect(resultado.cabeceras).toEqual(['#', 'VIN', 'VERSION', 'COMENTARIOS']);
+    expect(resultado.filas).toEqual([{ '#': '1', VIN: 'VIEJO123', VERSION: 'Sentra viejo', COMENTARIOS: '' }]);
+  });
+
   it('indica archivo vacío cuando el XLSX no tiene filas de datos', async () => {
     const contenido = await construirXlsx([['Modelo', 'Descripcion', 'Anio']]);
     const resultado = await parsearArchivo({ nombreArchivo: 'lote.xlsx', contenido });

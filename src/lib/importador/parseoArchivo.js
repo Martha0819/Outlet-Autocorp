@@ -25,28 +25,61 @@ async function leerCsv(contenido) {
   return filasDesdeMatriz(data);
 }
 
-async function leerXlsx(contenido) {
-  const libro = new ExcelJS.Workbook();
-  await libro.xlsx.load(contenido);
-  const hoja = libro.worksheets[0];
+function nombreHojaActiva(libro) {
+  const indiceActiva = libro.views?.[0]?.activeTab;
+  if (typeof indiceActiva === 'number' && libro.worksheets[indiceActiva]) {
+    return libro.worksheets[indiceActiva].name;
+  }
+  return libro.worksheets[0]?.name ?? null;
+}
+
+function matrizDeHoja(hoja) {
   const matriz = [];
   hoja.eachRow((fila) => {
     matriz.push(fila.values.slice(1).map((v) => (v === undefined || v === null ? '' : v)));
   });
-  return filasDesdeMatriz(matriz);
+  return matriz;
 }
 
-export async function parsearArchivo({ nombreArchivo, contenido }) {
+// Un .xlsx con varias pestañas nunca se adivina en silencio: si el archivo
+// trae más de una hoja y no se indicó cuál usar, se devuelve la lista para
+// que el usuario elija explícitamente — y cada hoja se analiza por separado
+// (solo la elegida), nunca combinando varias en un mismo lote, para no
+// cruzar datos de hojas distintas.
+async function leerXlsx(contenido, hojaElegida) {
+  const libro = new ExcelJS.Workbook();
+  await libro.xlsx.load(contenido);
+
+  if (libro.worksheets.length > 1 && !hojaElegida) {
+    return { requiereHoja: true, hojas: libro.worksheets.map((h) => h.name), hojaActiva: nombreHojaActiva(libro) };
+  }
+
+  const hoja = hojaElegida ? libro.worksheets.find((h) => h.name === hojaElegida) : libro.worksheets[0];
+  if (!hoja) {
+    return { requiereHoja: true, hojas: libro.worksheets.map((h) => h.name), hojaActiva: nombreHojaActiva(libro) };
+  }
+
+  return { requiereHoja: false, ...filasDesdeMatriz(matrizDeHoja(hoja)) };
+}
+
+export async function parsearArchivo({ nombreArchivo, contenido, hoja }) {
   const extension = extensionDe(nombreArchivo || '');
   if (!FORMATOS_SOPORTADOS.includes(extension)) {
     return { tipo: 'FormatoNoSoportado' };
   }
 
-  const { cabeceras, filas } = extension === '.csv' ? await leerCsv(contenido) : await leerXlsx(contenido);
-
-  if (cabeceras.length === 0 || filas.length === 0) {
-    return { tipo: 'ArchivoVacio' };
+  if (extension === '.csv') {
+    const { cabeceras, filas } = await leerCsv(contenido);
+    if (cabeceras.length === 0 || filas.length === 0) return { tipo: 'ArchivoVacio' };
+    return { tipo: 'ok', cabeceras, filas };
   }
 
-  return { tipo: 'ok', cabeceras, filas };
+  const resultado = await leerXlsx(contenido, hoja);
+  if (resultado.requiereHoja) {
+    return { tipo: 'RequiereHoja', hojas: resultado.hojas, hojaActiva: resultado.hojaActiva };
+  }
+  if (resultado.cabeceras.length === 0 || resultado.filas.length === 0) {
+    return { tipo: 'ArchivoVacio' };
+  }
+  return { tipo: 'ok', cabeceras: resultado.cabeceras, filas: resultado.filas };
 }

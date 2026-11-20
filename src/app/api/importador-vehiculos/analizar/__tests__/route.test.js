@@ -4,6 +4,7 @@
 // el Uint8Array que produce TextEncoder en Node no es `instanceof` el
 // Uint8Array del realm de jsdom — falla la firma. Esta ruta no usa DOM.
 import { describe, it, expect, beforeEach, afterAll, afterEach, vi } from 'vitest';
+import ExcelJS from 'exceljs';
 import { prisma } from '@/lib/prisma';
 import { limpiarBaseDePrueba, sembrarCatalogo } from '@/lib/importador/__tests__/testDb';
 import { crearUsuarioDePrueba } from '@/lib/importador/__tests__/testAuth';
@@ -12,9 +13,22 @@ function archivoCsv(contenido, nombre = 'lote.csv') {
   return new File([contenido], nombre, { type: 'text/csv' });
 }
 
-async function peticionConArchivo(archivo) {
+async function archivoXlsxMultihoja() {
+  const libro = new ExcelJS.Workbook();
+  const hojaA = libro.addWorksheet('Plantilla');
+  hojaA.addRow(['Modelo', 'Descripcion', 'Anio', 'Marca', 'Transmision', 'Precio']);
+  hojaA.addRow(['Sentra viejo', 'Auto viejo', '2018', 'Nissan', 'Manual', '150000']);
+  const hojaB = libro.addWorksheet('Noviembre');
+  hojaB.addRow(['Modelo', 'Descripcion', 'Anio', 'Marca', 'Transmision', 'Precio']);
+  hojaB.addRow(['Sentra', 'Auto seminuevo', '2020', 'Nissan', 'Automatica', '250000']);
+  const buffer = await libro.xlsx.writeBuffer();
+  return new File([buffer], 'lote.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+
+async function peticionConArchivo(archivo, hoja) {
   const formData = new FormData();
   formData.append('archivo', archivo);
+  if (hoja) formData.append('hoja', hoja);
   return new Request('http://localhost/api/importador-vehiculos/analizar', { method: 'POST', body: formData });
 }
 
@@ -71,6 +85,32 @@ describe('POST /api/importador-vehiculos/analizar', () => {
     const respuesta = await POST(await peticionConArchivo(archivoCsv(csv)));
 
     expect(respuesta.status).toBe(403);
+  });
+
+  it('con un xlsx de varias hojas y ninguna elegida, pide elegir hoja y no analiza filas de ninguna', async () => {
+    const { token } = await crearUsuarioDePrueba({ esAdministrador: true, unidadNegocioId: catalogo.matriz.id, permisos: [['vehiculo', 'crear']] });
+    const { POST } = await importarRouteConSesion(token);
+
+    const respuesta = await POST(await peticionConArchivo(await archivoXlsxMultihoja()));
+    const cuerpo = await respuesta.json();
+
+    expect(respuesta.status).toBe(200);
+    expect(cuerpo.requiereHoja).toBe(true);
+    expect(cuerpo.hojas).toEqual(['Plantilla', 'Noviembre']);
+    expect(cuerpo.filas).toBeUndefined();
+  });
+
+  it('con un xlsx de varias hojas y una elegida, analiza solo las filas de esa hoja', async () => {
+    const { token } = await crearUsuarioDePrueba({ esAdministrador: true, unidadNegocioId: catalogo.matriz.id, permisos: [['vehiculo', 'crear']] });
+    const { POST } = await importarRouteConSesion(token);
+
+    const respuesta = await POST(await peticionConArchivo(await archivoXlsxMultihoja(), 'Noviembre'));
+    const cuerpo = await respuesta.json();
+
+    expect(respuesta.status).toBe(200);
+    expect(cuerpo.requiereHoja).toBeUndefined();
+    expect(cuerpo.filas).toHaveLength(1);
+    expect(cuerpo.filas[0].valoresResueltos.nombre).toBe('Auto seminuevo');
   });
 
   it('rechaza un formato no soportado', async () => {
