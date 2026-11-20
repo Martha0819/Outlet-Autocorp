@@ -114,7 +114,10 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
       if (error.code !== 'P2002') {
         console.error('Error al crear vehículo durante importación:', error);
       }
-      const motivo = error.code === 'P2002' ? 'VIN duplicado' : 'no se pudo crear el vehículo con los datos dados';
+      // El mensaje técnico va directo al resumen (no solo a logs del
+      // servidor) porque este importador lo usa personal interno, no
+      // público, y encontrar el log del servidor no siempre es accesible.
+      const motivo = error.code === 'P2002' ? 'VIN duplicado' : `no se pudo crear el vehículo: ${error.message || error.code || 'error desconocido'}`;
       conError.push({ datosOriginales: fila.datosOriginales, motivo });
       continue;
     }
