@@ -20,10 +20,14 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
   const data = {};
 
-  for (const field of ['nombre', 'modelo', 'transmision', 'estatus']) {
+  for (const field of ['nombre', 'modelo', 'estatus']) {
     if (body[field] !== undefined) data[field] = body[field];
   }
   if (body.vin !== undefined) data.vin = body.vin === '' ? null : body.vin;
+  if (body.transmision !== undefined) data.transmision = body.transmision === '' ? null : body.transmision;
+  if (body.diasInventario !== undefined) {
+    data.diasInventario = body.diasInventario === '' || body.diasInventario === null ? null : Number(body.diasInventario);
+  }
   for (const field of ['anio', 'km', 'marcaId']) {
     if (body[field] !== undefined) data[field] = Number(body[field]);
   }

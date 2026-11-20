@@ -1,13 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'precioLista'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
   nombre: 'descripción',
   anio: 'año',
-  transmision: 'transmisión',
   precioLista: 'precio de lista',
 };
 
@@ -84,7 +83,7 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           anio,
           km: valores.km ? Number(valores.km) : 0,
           vin,
-          transmision: valores.transmision,
+          transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
           marcaId: fila.marcaId,
           unidadNegocioId: fila.unidadNegocioId,
           servicioId: fila.servicioId ?? null,

@@ -225,7 +225,7 @@ model Vehiculo {
   anio            Int
   km              Int
   vin             String?           @unique
-  transmision     String
+  transmision     String?
   marcaId         Int               @map("marca_id")
   unidadNegocioId Int               @map("unidad_negocio_id")
   servicioId      Int?              @map("servicio_id")
@@ -234,6 +234,10 @@ model Vehiculo {
   precioLista     Decimal?          @db.Decimal(12, 2) @map("precio_lista")
   precioRemate    Decimal?          @db.Decimal(12, 2) @map("precio_remate")
   bono            Decimal?          @db.Decimal(12, 2) @map("bono")
+  // Días en inventario: campo de negocio entero, aislado de los metadatos de
+  // auditoría (created_at/updated_at). "Fecha de ingreso" NO se guarda: se
+  // calcula (createdAt - diasInventario), así nunca puede desincronizarse.
+  diasInventario  Int?              @map("dias_inventario")
   createdAt       DateTime          @default(now()) @map("created_at")
   updatedAt       DateTime          @updatedAt @map("updated_at")
 

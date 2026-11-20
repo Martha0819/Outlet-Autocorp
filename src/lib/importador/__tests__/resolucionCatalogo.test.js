@@ -104,6 +104,16 @@ describe('clasificarFilas', () => {
     expect(resultado.valoresResueltos.bono).toBeNull();
   });
 
+  it('no exige transmision: una fila sin transmisión queda "lista" con transmision=null', async () => {
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ Transmision: '' })],
+      mapeo: MAPEO_BASE,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.transmision).toBeNull();
+  });
+
   it('resuelve servicio contra el catálogo cuando la columna está mapeada y coincide', async () => {
     const mapeoConServicio = [...MAPEO_BASE, { columna: 'Unidad', campo: 'servicio' }];
     const [resultado] = await clasificarFilas({

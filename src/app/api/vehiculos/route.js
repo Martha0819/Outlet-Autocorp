@@ -59,13 +59,13 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, modelo, anio, km, vin, transmision, marcaId, servicioId, precioSinIva, precioLista, precioRemate, bono } = body;
+  const { nombre, modelo, anio, km, vin, transmision, marcaId, servicioId, precioSinIva, precioLista, precioRemate, bono, diasInventario } = body;
   // Un no-Administrador solo puede crear vehículos en su propia unidad.
   const unidadNegocioId = esAdministrador(auth.usuario) ? body.unidadNegocioId : auth.usuario.unidadNegocioId;
 
-  if (!nombre?.trim() || !modelo?.trim() || !anio || !transmision?.trim() || !marcaId || !unidadNegocioId) {
+  if (!nombre?.trim() || !modelo?.trim() || !anio || !marcaId || !unidadNegocioId) {
     return Response.json(
-      { error: 'nombre, modelo, anio, transmision, marcaId y unidadNegocioId son requeridos' },
+      { error: 'nombre, modelo, anio, marcaId y unidadNegocioId son requeridos' },
       { status: 400 }
     );
   }
@@ -81,7 +81,7 @@ export async function POST(request) {
         anio: Number(anio),
         km: Number(km) || 0,
         vin: vin?.trim() ? vin.trim() : null,
-        transmision,
+        transmision: transmision?.trim() ? transmision.trim() : null,
         marcaId: Number(marcaId),
         unidadNegocioId: Number(unidadNegocioId),
         servicioId: servicioId ? Number(servicioId) : null,
@@ -89,6 +89,7 @@ export async function POST(request) {
         precioLista: Number(precioLista),
         precioRemate: precioRemate ? Number(precioRemate) : null,
         bono: bono ? Number(bono) : null,
+        diasInventario: diasInventario !== undefined && diasInventario !== '' ? Number(diasInventario) : null,
       },
       include: { marca: true, unidadNegocio: true, servicio: true },
     });

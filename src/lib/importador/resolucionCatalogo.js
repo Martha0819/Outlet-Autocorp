@@ -1,13 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { normalizarTexto } from './normalizar';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'transmision', 'marca', 'precioLista'];
+const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'marca', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
   nombre: 'descripción',
   anio: 'año',
-  transmision: 'transmisión',
   marca: 'marca',
   precioLista: 'precio de lista',
 };
@@ -107,7 +106,7 @@ export async function clasificarFilas({ filas, mapeo }) {
         anio,
         km: valores.km ? Number(valores.km) : 0,
         vin,
-        transmision: valores.transmision,
+        transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
         precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
         precioLista: Number(valores.precioLista),
         precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,

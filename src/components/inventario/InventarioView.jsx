@@ -49,7 +49,16 @@ const selectPillStyle = {
 };
 
 function emptyForm() {
-  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', marcaId: '', unidadNegocioId: '', servicioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '' };
+  return { nombre: '', modelo: '', anio: '', km: '', vin: '', transmision: '', marcaId: '', unidadNegocioId: '', servicioId: '', precioSinIva: '', precioLista: '', precioRemate: '', bono: '', diasInventario: '' };
+}
+
+// "Fecha de ingreso" nunca se guarda: se calcula a partir de diasInventario
+// (campo de negocio, editable) y createdAt (metadato de auditoría, intacto).
+function fechaIngresoCalculada(createdAt, diasInventario) {
+  if (diasInventario === null || diasInventario === undefined) return null;
+  const fecha = new Date(createdAt);
+  fecha.setDate(fecha.getDate() - diasInventario);
+  return fecha;
 }
 
 // Debounce simple: espera 350ms de silencio antes de disparar la búsqueda al
@@ -127,8 +136,8 @@ export function InventarioView() {
   }, [vehiculosPagina, sortBy]);
 
   const handleCreate = async () => {
-    if (!newForm.nombre.trim() || !newForm.modelo.trim() || !newForm.anio || !newForm.transmision.trim() || !newForm.marcaId || !newForm.unidadNegocioId) {
-      notify('Nombre, modelo, año, transmisión, marca y unidad de negocio son requeridos', 'error');
+    if (!newForm.nombre.trim() || !newForm.modelo.trim() || !newForm.anio || !newForm.marcaId || !newForm.unidadNegocioId) {
+      notify('Nombre, modelo, año, marca y unidad de negocio son requeridos', 'error');
       return;
     }
     if (!newForm.precioLista) {
@@ -150,14 +159,15 @@ export function InventarioView() {
       anio: v.anio,
       km: v.km,
       vin: v.vin || '',
-      transmision: v.transmision,
+      transmision: v.transmision || '',
       marcaId: v.marcaId,
       unidadNegocioId: v.unidadNegocioId,
       servicioId: v.servicioId ?? '',
       precioSinIva: v.precioSinIva ?? '',
       precioLista: v.precioLista ?? '',
       precioRemate: v.precioRemate ?? '',
-      bono: v.bono ?? ''
+      bono: v.bono ?? '',
+      diasInventario: v.diasInventario ?? ''
     });
     setEditingId(v.id);
   };
@@ -272,7 +282,7 @@ export function InventarioView() {
             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Descripción" value={newForm.nombre} onChange={(e) => setNewForm({ ...newForm, nombre: e.target.value })} /></div>
             <div style={{ flex: '0 1 90px' }}><input style={inputStyle} type="number" placeholder="Año" value={newForm.anio} onChange={(e) => setNewForm({ ...newForm, anio: e.target.value })} /></div>
             <div style={{ flex: '0 1 100px' }}><input style={inputStyle} type="number" placeholder="Km" value={newForm.km} onChange={(e) => setNewForm({ ...newForm, km: e.target.value })} /></div>
-            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Transmisión" value={newForm.transmision} onChange={(e) => setNewForm({ ...newForm, transmision: e.target.value })} /></div>
+            <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Transmisión (opcional)" value={newForm.transmision} onChange={(e) => setNewForm({ ...newForm, transmision: e.target.value })} /></div>
             <div style={{ flex: '1 1 140px' }}>
               <select style={inputStyle} value={newForm.marcaId} onChange={(e) => setNewForm({ ...newForm, marcaId: e.target.value })}>
                 <option value="">Marca…</option>
@@ -296,6 +306,10 @@ export function InventarioView() {
               />
             </div>
             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="VIN (opcional)" value={newForm.vin} onChange={(e) => setNewForm({ ...newForm, vin: e.target.value })} /></div>
+            <div style={{ flex: '0 1 150px' }}>
+              <label style={{ fontSize: 10, color: '#8e8784', display: 'block', marginBottom: 2 }}>Días en inventario (opcional)</label>
+              <input style={inputStyle} type="number" min="0" placeholder="Días en inventario" value={newForm.diasInventario} onChange={(e) => setNewForm({ ...newForm, diasInventario: e.target.value })} />
+            </div>
             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio sin IVA" value={newForm.precioSinIva} onChange={(e) => setNewForm({ ...newForm, precioSinIva: e.target.value })} /></div>
             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio de lista" value={newForm.precioLista} onChange={(e) => setNewForm({ ...newForm, precioLista: e.target.value })} /></div>
             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio remate" value={newForm.precioRemate} onChange={(e) => setNewForm({ ...newForm, precioRemate: e.target.value })} /></div>
@@ -319,6 +333,7 @@ export function InventarioView() {
               <tr style={{ backgroundColor: '#251f1d' }}>
                 <th style={{ padding: '16px 28px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>VEHÍCULO</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>AÑO & KM</th>
+                <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>DÍAS EN INVENTARIO</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>TRANSMISIÓN</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>PRECIO</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>UNIDAD DE NEGOCIO</th>
@@ -328,9 +343,9 @@ export function InventarioView() {
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: '#8e8784', fontSize: 13 }}>Cargando…</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: '#8e8784', fontSize: 13 }}>Cargando…</td></tr>
               ) : vehiculosOrdenados.length === 0 ? (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: '#8e8784', fontSize: 13 }}>No se encontraron vehículos que coincidan con los filtros aplicados.</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: '#8e8784', fontSize: 13 }}>No se encontraron vehículos que coincidan con los filtros aplicados.</td></tr>
               ) : (
                 vehiculosOrdenados.map((v) => {
                   const isEditing = editingId === v.id;
@@ -339,7 +354,7 @@ export function InventarioView() {
                   if (isEditing) {
                     return (
                       <tr key={v.id} style={{ borderBottom: '1px solid #eae7e5', background: '#fff8f0' }}>
-                        <td style={{ padding: '14px 16px' }} colSpan={7}>
+                        <td style={{ padding: '14px 16px' }} colSpan={8}>
                           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Modelo" value={editForm.modelo} onChange={(e) => setEditForm({ ...editForm, modelo: e.target.value })} /></div>
                             <div style={{ flex: '1 1 140px' }}><input style={inputStyle} placeholder="Descripción" value={editForm.nombre} onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value })} /></div>
@@ -368,6 +383,10 @@ export function InventarioView() {
                               />
                             </div>
                             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} placeholder="VIN" value={editForm.vin} onChange={(e) => setEditForm({ ...editForm, vin: e.target.value })} /></div>
+                            <div style={{ flex: '0 1 150px' }}>
+                              <label style={{ fontSize: 10, color: '#8e8784', display: 'block', marginBottom: 2 }}>Días en inventario</label>
+                              <input style={inputStyle} type="number" min="0" value={editForm.diasInventario} onChange={(e) => setEditForm({ ...editForm, diasInventario: e.target.value })} />
+                            </div>
                             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio sin IVA" value={editForm.precioSinIva} onChange={(e) => setEditForm({ ...editForm, precioSinIva: e.target.value })} /></div>
                             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio de lista" value={editForm.precioLista} onChange={(e) => setEditForm({ ...editForm, precioLista: e.target.value })} /></div>
                             <div style={{ flex: '0 1 130px' }}><input style={inputStyle} type="number" placeholder="Precio remate" value={editForm.precioRemate} onChange={(e) => setEditForm({ ...editForm, precioRemate: e.target.value })} /></div>
@@ -393,7 +412,19 @@ export function InventarioView() {
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>
                         <strong>{v.anio}</strong> <span style={{ color: '#8e8784' }}>· {formatNumber(v.km)} km</span>
                       </td>
-                      <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.transmision}</td>
+                      <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>
+                        {v.diasInventario !== null && v.diasInventario !== undefined ? (
+                          <>
+                            <strong>{v.diasInventario}</strong> días
+                            {fechaIngresoCalculada(v.createdAt, v.diasInventario) && (
+                              <div style={{ fontSize: 11, color: '#8e8784', marginTop: 2 }}>
+                                Ingreso: {fechaIngresoCalculada(v.createdAt, v.diasInventario).toLocaleDateString('es-MX')}
+                              </div>
+                            )}
+                          </>
+                        ) : '—'}
+                      </td>
+                      <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.transmision || '—'}</td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 14, fontWeight: 800, color: '#251f1d' }}>
                         {v.precioLista ? formatCurrency(Number(v.precioLista)) : '—'}
                         {(v.precioRemate || v.bono) && (
