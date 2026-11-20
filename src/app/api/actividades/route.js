@@ -53,20 +53,27 @@ export async function POST(request) {
     return Response.json({ error: 'nombre, fecha y horario son requeridos' }, { status: 400 });
   }
 
-  const actividad = await prisma.actividad.create({
-    data: {
-      nombre,
-      fecha: new Date(fecha),
-      fechaFin: fechaFin ? new Date(fechaFin) : null,
-      horario: new Date(`1970-01-01T${horario}:00Z`),
-      unidadNegocioId,
-      responsableId: responsableId ? Number(responsableId) : null,
-      responsableNombre: responsableNombre?.trim() || null,
-      estatus: estatus || 'PENDIENTE',
-      observaciones: observaciones?.trim() ? observaciones.trim() : null,
-    },
-    include: { unidadNegocio: true, responsable: { select: USUARIO_PUBLIC_SELECT } },
-  });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'actividad', recursoId: actividad.id, detalle: actividad.nombre });
-  return Response.json(actividad, { status: 201 });
+  try {
+    const actividad = await prisma.actividad.create({
+      data: {
+        nombre,
+        fecha: new Date(fecha),
+        fechaFin: fechaFin ? new Date(fechaFin) : null,
+        horario: new Date(`1970-01-01T${horario}:00Z`),
+        unidadNegocioId,
+        responsableId: responsableId ? Number(responsableId) : null,
+        responsableNombre: responsableNombre?.trim() || null,
+        estatus: estatus || 'PENDIENTE',
+        observaciones: observaciones?.trim() ? observaciones.trim() : null,
+      },
+      include: { unidadNegocio: true, responsable: { select: USUARIO_PUBLIC_SELECT } },
+    });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'actividad', recursoId: actividad.id, detalle: actividad.nombre });
+    return Response.json(actividad, { status: 201 });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'El responsable o la unidad de negocio indicada no existe' }, { status: 400 });
+    }
+    throw error;
+  }
 }

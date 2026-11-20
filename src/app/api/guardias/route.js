@@ -61,21 +61,28 @@ export async function POST(request) {
     }
   }
 
-  const guardia = await prisma.guardia.create({
-    data: {
-      usuarioId: usuarioId ? Number(usuarioId) : null,
-      asesorNombre: nombreFinal || null,
-      asesorCorreo: asesorCorreo?.trim() || null,
-      asesorTelefono: asesorTelefono?.trim() || null,
-      fecha: new Date(fecha),
-      fechaFin: fechaFin ? new Date(fechaFin) : null,
-      horarioInicio: horarioInicio ? new Date(`1970-01-01T${horarioInicio}:00Z`) : null,
-      horarioFin: horarioFin ? new Date(`1970-01-01T${horarioFin}:00Z`) : null,
-      turnoId: Number(turnoId),
-      area: area?.trim() ? area.trim() : null,
-    },
-    include: { usuario: { select: USUARIO_PUBLIC_SELECT }, turno: true },
-  });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'guardia', recursoId: guardia.id });
-  return Response.json(guardia, { status: 201 });
+  try {
+    const guardia = await prisma.guardia.create({
+      data: {
+        usuarioId: usuarioId ? Number(usuarioId) : null,
+        asesorNombre: nombreFinal || null,
+        asesorCorreo: asesorCorreo?.trim() || null,
+        asesorTelefono: asesorTelefono?.trim() || null,
+        fecha: new Date(fecha),
+        fechaFin: fechaFin ? new Date(fechaFin) : null,
+        horarioInicio: horarioInicio ? new Date(`1970-01-01T${horarioInicio}:00Z`) : null,
+        horarioFin: horarioFin ? new Date(`1970-01-01T${horarioFin}:00Z`) : null,
+        turnoId: Number(turnoId),
+        area: area?.trim() ? area.trim() : null,
+      },
+      include: { usuario: { select: USUARIO_PUBLIC_SELECT }, turno: true },
+    });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'guardia', recursoId: guardia.id });
+    return Response.json(guardia, { status: 201 });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'El usuario o el turno indicado no existe' }, { status: 400 });
+    }
+    throw error;
+  }
 }
