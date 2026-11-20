@@ -120,6 +120,9 @@ export function GuardiasView() {
   // Formularios
   const [shiftForm, setShiftForm] = useState({
     usuarioId: '',
+    asesorNombre: '',
+    asesorCorreo: '',
+    asesorTelefono: '',
     fecha: '2026-11-20',
     horarioInicio: '09:00',
     horarioFin: '15:00',
@@ -129,6 +132,7 @@ export function GuardiasView() {
 
   const [actForm, setActForm] = useState({
     nombre: '',
+    responsableNombre: '',
     responsableId: '',
     fecha: '2026-11-20',
     horario: '10:00',
@@ -136,21 +140,21 @@ export function GuardiasView() {
     observaciones: '',
   });
 
-  // Lista de asesores únicos
+  // Lista de asesores únicos para el filtro
   const allResponsibles = useMemo(() => {
-    const map = new Map();
+    const set = new Set();
     guardias.forEach((g) => {
-      if (g.usuario) {
-        map.set(g.usuario.id, g.usuario.nombre);
-      }
+      const nombre = g.asesorNombre || g.usuario?.nombre;
+      if (nombre) set.add(nombre);
     });
-    return Array.from(map.entries()).map(([id, nombre]) => ({ id, nombre }));
+    return Array.from(set).sort();
   }, [guardias]);
 
   const filteredGuardias = useMemo(() => {
     return guardias.filter((g) => {
       if (responsibleFilter === 'all') return true;
-      return String(g.usuarioId) === String(responsibleFilter);
+      const nombre = g.asesorNombre || g.usuario?.nombre;
+      return nombre === responsibleFilter;
     });
   }, [guardias, responsibleFilter]);
 
@@ -229,7 +233,10 @@ export function GuardiasView() {
   // Handlers para Guardias
   const openNewShiftModal = (defaultDate = '2026-11-20') => {
     setShiftForm({
-      usuarioId: usuarios[0]?.id ? String(usuarios[0].id) : '',
+      usuarioId: '',
+      asesorNombre: '',
+      asesorCorreo: '',
+      asesorTelefono: '',
       fecha: defaultDate,
       horarioInicio: '09:00',
       horarioFin: '15:00',
@@ -242,6 +249,9 @@ export function GuardiasView() {
   const openEditShiftModal = (g) => {
     setShiftForm({
       usuarioId: g.usuarioId ? String(g.usuarioId) : '',
+      asesorNombre: g.asesorNombre || g.usuario?.nombre || '',
+      asesorCorreo: g.asesorCorreo || g.usuario?.email || '',
+      asesorTelefono: g.asesorTelefono || '',
       fecha: toDateStr(g.fecha) || '2026-11-20',
       horarioInicio: toTimeStr(g.horarioInicio) || '09:00',
       horarioFin: toTimeStr(g.horarioFin) || '15:00',
@@ -253,33 +263,30 @@ export function GuardiasView() {
 
   const handleSaveShift = async (e) => {
     e.preventDefault();
-    if (!shiftForm.usuarioId || !shiftForm.fecha || !shiftForm.turnoId) {
-      notify('El usuario, fecha y turno son obligatorios', 'error');
+    if (!shiftForm.asesorNombre.trim() || !shiftForm.fecha || !shiftForm.turnoId) {
+      notify('El nombre del asesor, fecha y turno son obligatorios', 'error');
       return;
     }
+    const payload = {
+      usuarioId: shiftForm.usuarioId ? Number(shiftForm.usuarioId) : null,
+      asesorNombre: shiftForm.asesorNombre.trim(),
+      asesorCorreo: shiftForm.asesorCorreo.trim() || null,
+      asesorTelefono: shiftForm.asesorTelefono.trim() || null,
+      fecha: shiftForm.fecha,
+      horarioInicio: shiftForm.horarioInicio,
+      horarioFin: shiftForm.horarioFin,
+      turnoId: Number(shiftForm.turnoId),
+      area: shiftForm.area,
+    };
     try {
       if (activeShiftModal?.isEdit) {
         await updateGuardia({
           id: activeShiftModal.guardia.id,
-          data: {
-            usuarioId: Number(shiftForm.usuarioId),
-            fecha: shiftForm.fecha,
-            horarioInicio: shiftForm.horarioInicio,
-            horarioFin: shiftForm.horarioFin,
-            turnoId: Number(shiftForm.turnoId),
-            area: shiftForm.area,
-          },
+          data: payload,
         }).unwrap();
         notify('Guardia actualizada correctamente');
       } else {
-        await createGuardia({
-          usuarioId: Number(shiftForm.usuarioId),
-          fecha: shiftForm.fecha,
-          horarioInicio: shiftForm.horarioInicio,
-          horarioFin: shiftForm.horarioFin,
-          turnoId: Number(shiftForm.turnoId),
-          area: shiftForm.area,
-        }).unwrap();
+        await createGuardia(payload).unwrap();
         notify('Guardia programada exitosamente');
       }
       setActiveShiftModal(null);
@@ -289,7 +296,8 @@ export function GuardiasView() {
   };
 
   const handleDeleteShift = async (g) => {
-    if (!confirm(`¿Eliminar la guardia de ${g.usuario?.nombre || 'usuario'} del ${formatDate(g.fecha, 'short')}?`)) return;
+    const nombre = g.asesorNombre || g.usuario?.nombre || 'usuario';
+    if (!confirm(`¿Eliminar la guardia de ${nombre} del ${formatDate(g.fecha, 'short')}?`)) return;
     try {
       await deleteGuardia(g.id).unwrap();
       notify('Guardia eliminada');
@@ -302,7 +310,8 @@ export function GuardiasView() {
   const openNewActivityModal = () => {
     setActForm({
       nombre: '',
-      responsableId: usuarios[0]?.id ? String(usuarios[0].id) : '',
+      responsableNombre: '',
+      responsableId: '',
       fecha: '2026-11-20',
       horario: '10:00',
       estatus: 'PENDIENTE',
@@ -314,6 +323,7 @@ export function GuardiasView() {
   const openEditActivityModal = (act) => {
     setActForm({
       nombre: act.nombre || '',
+      responsableNombre: act.responsableNombre || act.responsable?.nombre || '',
       responsableId: act.responsableId ? String(act.responsableId) : '',
       fecha: toDateStr(act.fecha) || '2026-11-20',
       horario: toTimeStr(act.horario) || '10:00',
@@ -329,29 +339,24 @@ export function GuardiasView() {
       notify('El nombre de la actividad es obligatorio', 'error');
       return;
     }
+    const payload = {
+      nombre: actForm.nombre.trim(),
+      responsableNombre: actForm.responsableNombre.trim() || null,
+      responsableId: actForm.responsableId ? Number(actForm.responsableId) : null,
+      fecha: actForm.fecha,
+      horario: actForm.horario,
+      estatus: actForm.estatus || 'PENDIENTE',
+      observaciones: actForm.observaciones,
+    };
     try {
       if (activeActivityModal?.isEdit) {
         await updateActividad({
           id: activeActivityModal.actividad.id,
-          data: {
-            nombre: actForm.nombre,
-            responsableId: actForm.responsableId ? Number(actForm.responsableId) : null,
-            fecha: actForm.fecha,
-            horario: actForm.horario,
-            estatus: actForm.estatus,
-            observaciones: actForm.observaciones,
-          },
+          data: payload,
         }).unwrap();
         notify('Actividad actualizada');
       } else {
-        await createActividad({
-          nombre: actForm.nombre,
-          responsableId: actForm.responsableId ? Number(actForm.responsableId) : null,
-          fecha: actForm.fecha,
-          horario: actForm.horario,
-          estatus: actForm.estatus,
-          observaciones: actForm.observaciones,
-        }).unwrap();
+        await createActividad(payload).unwrap();
         notify('Actividad creada exitosamente');
       }
       setActiveActivityModal(null);
@@ -577,9 +582,9 @@ export function GuardiasView() {
                   }}
                 >
                   <option value="all">Todos los asesores</option>
-                  {allResponsibles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.nombre}
+                  {allResponsibles.map((nombre) => (
+                    <option key={nombre} value={nombre}>
+                      {nombre}
                     </option>
                   ))}
                 </select>
@@ -722,11 +727,11 @@ export function GuardiasView() {
                                     flexShrink: 0,
                                   }}
                                 >
-                                  {getInitials(shift.usuario?.nombre)}
+                                  {getInitials(shift.asesorNombre || shift.usuario?.nombre)}
                                 </span>
                                 <div>
                                   <div style={{ fontSize: '12px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
-                                    {shift.usuario?.nombre}
+                                    {shift.asesorNombre || shift.usuario?.nombre}
                                   </div>
                                   <div style={{ fontSize: '10px', color: '#8e8784' }}>
                                     {shift.turno?.nombre || 'Turno'}
@@ -928,7 +933,7 @@ export function GuardiasView() {
                             {act.nombre}
                           </h4>
                           <p style={{ fontSize: '11px', color: '#8e8784', margin: 0 }}>
-                            {act.responsable?.nombre ? `Resp: ${act.responsable.nombre}` : 'Sin responsable asignado'}
+                            {act.responsableNombre || act.responsable?.nombre ? `Resp: ${act.responsableNombre || act.responsable.nombre}` : 'Sin responsable asignado'}
                           </p>
                         </div>
 
@@ -957,7 +962,7 @@ export function GuardiasView() {
                             Detalle de Asignación
                           </span>
                           <h5 style={{ fontSize: '14px', fontWeight: 800, margin: '4px 0 6px 0', color: '#251f1d' }}>
-                            {act.responsable?.nombre || 'Sin asignar'}
+                            {act.responsableNombre || act.responsable?.nombre || 'Sin asignar'}
                           </h5>
                           <p style={{ fontSize: '11px', color: '#6e6764', margin: 0, lineHeight: 1.4, maxHeight: 60, overflowY: 'auto' }}>
                             {act.observaciones || 'Sin notas adicionales.'}
@@ -1064,19 +1069,41 @@ export function GuardiasView() {
                 <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
                   Asesor / Responsable *
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Nombre completo del asesor..."
                   style={inputStyle}
-                  value={shiftForm.usuarioId}
-                  onChange={(e) => setShiftForm({ ...shiftForm, usuarioId: e.target.value })}
+                  value={shiftForm.asesorNombre}
+                  onChange={(e) => setShiftForm({ ...shiftForm, asesorNombre: e.target.value })}
                   required
-                >
-                  <option value="">Seleccionar usuario…</option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nombre} ({u.tipoUsuarioNombre || 'Usuario'})
-                    </option>
-                  ))}
-                </select>
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                    Correo electrónico (opcional)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="correo@ejemplo.com"
+                    style={inputStyle}
+                    value={shiftForm.asesorCorreo}
+                    onChange={(e) => setShiftForm({ ...shiftForm, asesorCorreo: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                    Teléfono (opcional)
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="10 dígitos"
+                    style={inputStyle}
+                    value={shiftForm.asesorTelefono}
+                    onChange={(e) => setShiftForm({ ...shiftForm, asesorTelefono: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1235,18 +1262,13 @@ export function GuardiasView() {
                 <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
                   Responsable Asignado
                 </label>
-                <select
+                <input
+                  type="text"
+                  placeholder="Nombre del responsable o área encargada..."
                   style={inputStyle}
-                  value={actForm.responsableId}
-                  onChange={(e) => setActForm({ ...actForm, responsableId: e.target.value })}
-                >
-                  <option value="">Sin asignar (o general)</option>
-                  {usuarios.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nombre}
-                    </option>
-                  ))}
-                </select>
+                  value={actForm.responsableNombre}
+                  onChange={(e) => setActForm({ ...actForm, responsableNombre: e.target.value })}
+                />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1274,21 +1296,6 @@ export function GuardiasView() {
                     required
                   />
                 </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
-                  Estado de la Actividad
-                </label>
-                <select
-                  style={inputStyle}
-                  value={actForm.estatus}
-                  onChange={(e) => setActForm({ ...actForm, estatus: e.target.value })}
-                >
-                  <option value="PENDIENTE">Pendiente</option>
-                  <option value="EN_PROCESO">En proceso</option>
-                  <option value="COMPLETADA">Completada</option>
-                </select>
               </div>
 
               <div>
@@ -1370,10 +1377,10 @@ export function GuardiasView() {
                   justifyContent: 'center',
                 }}
               >
-                {getInitials(popoverData.shift.usuario?.nombre)}
+                {getInitials(popoverData.shift.asesorNombre || popoverData.shift.usuario?.nombre)}
               </span>
               <span style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d' }}>
-                {popoverData.shift.usuario?.nombre || 'Asesor'}
+                {popoverData.shift.asesorNombre || popoverData.shift.usuario?.nombre || 'Asesor'}
               </span>
             </div>
             <span
@@ -1415,10 +1422,17 @@ export function GuardiasView() {
               </div>
             )}
 
-            {popoverData.shift.usuario?.email && (
+            {(popoverData.shift.asesorCorreo || popoverData.shift.usuario?.email) && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6e6764', fontSize: '11px' }}>
                 <span>✉️</span>
-                <span>{popoverData.shift.usuario.email}</span>
+                <span>{popoverData.shift.asesorCorreo || popoverData.shift.usuario?.email}</span>
+              </div>
+            )}
+
+            {popoverData.shift.asesorTelefono && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6e6764', fontSize: '11px' }}>
+                <span>📞</span>
+                <span>{popoverData.shift.asesorTelefono}</span>
               </div>
             )}
           </div>

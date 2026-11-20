@@ -5,6 +5,7 @@ import { registrarBitacora } from '@/lib/auth/bitacora';
 
 async function puedeVerGuardia(auth, guardia) {
   if (esAdministrador(auth.usuario)) return true;
+  if (!guardia.usuarioId) return true;
   const usuarioAsignado = await prisma.usuario.findUnique({ where: { id: guardia.usuarioId } });
   return usuarioAsignado?.unidadNegocioId === auth.usuario.unidadNegocioId;
 }
@@ -24,7 +25,10 @@ export async function PATCH(request, { params }) {
   const body = await request.json();
   const data = {};
 
-  if (body.usuarioId !== undefined) data.usuarioId = Number(body.usuarioId);
+  if (body.usuarioId !== undefined) data.usuarioId = body.usuarioId ? Number(body.usuarioId) : null;
+  if (body.asesorNombre !== undefined) data.asesorNombre = body.asesorNombre?.trim() || null;
+  if (body.asesorCorreo !== undefined) data.asesorCorreo = body.asesorCorreo?.trim() || null;
+  if (body.asesorTelefono !== undefined) data.asesorTelefono = body.asesorTelefono?.trim() || null;
   if (body.turnoId !== undefined) data.turnoId = Number(body.turnoId);
   if (body.fecha !== undefined) data.fecha = new Date(body.fecha);
   if (body.horarioInicio !== undefined) data.horarioInicio = body.horarioInicio ? new Date(`1970-01-01T${body.horarioInicio}:00Z`) : null;

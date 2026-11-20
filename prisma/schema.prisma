@@ -165,7 +165,10 @@ model Usuario {
 
 model Guardia {
   id             Int       @id @default(autoincrement())
-  usuarioId      Int       @map("usuario_id")
+  usuarioId      Int?      @map("usuario_id")
+  asesorNombre   String?   @map("asesor_nombre")
+  asesorCorreo   String?   @map("asesor_correo")
+  asesorTelefono String?   @map("asesor_telefono")
   fecha          DateTime  @db.Date
   horarioInicio  DateTime? @map("horario_inicio") @db.Time
   horarioFin     DateTime? @map("horario_fin") @db.Time
@@ -175,8 +178,8 @@ model Guardia {
   area           String?
   createdAt      DateTime  @default(now()) @map("created_at")
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-  turno   Turno   @relation(fields: [turnoId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
+  turno   Turno    @relation(fields: [turnoId], references: [id])
 
   @@map("guardia")
 }
@@ -188,15 +191,16 @@ enum EstatusActividad {
 }
 
 model Actividad {
-  id              Int               @id @default(autoincrement())
-  nombre          String
-  fecha           DateTime          @db.Date
-  horario         DateTime          @db.Time
-  unidadNegocioId Int?              @map("unidad_negocio_id")
-  responsableId   Int?              @map("responsable_id")
-  estatus         EstatusActividad  @default(PENDIENTE)
-  observaciones   String?
-  createdAt       DateTime          @default(now()) @map("created_at")
+  id                Int               @id @default(autoincrement())
+  nombre            String
+  fecha             DateTime          @db.Date
+  horario           DateTime          @db.Time
+  unidadNegocioId   Int?              @map("unidad_negocio_id")
+  responsableId     Int?              @map("responsable_id")
+  responsableNombre String?           @map("responsable_nombre")
+  estatus           EstatusActividad  @default(PENDIENTE)
+  observaciones     String?
+  createdAt         DateTime          @default(now()) @map("created_at")
 
   unidadNegocio UnidadNegocio? @relation(fields: [unidadNegocioId], references: [id])
   responsable   Usuario?       @relation(fields: [responsableId], references: [id])
@@ -252,6 +256,7 @@ model Cliente {
   nombre                  String
   telefono                String
   correo                  String?
+  numeroAcompanantes      Int      @default(0) @map("numero_acompanantes")
   visitaMarcaEspecifica   Boolean  @default(false) @map("visita_marca_especifica")
   marcaId                 Int?     @map("marca_id")
   // Qué unidad de negocio lo registró. Nullable porque los clientes ya

@@ -4,8 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useNotify } from '@/store/features/ui/useNotify';
 import { useGetCatalogoQuery } from '@/store/features/catalogos/catalogoApiSlice';
 import { useGetVehiculosQuery } from '@/store/features/vehiculos/vehiculoApiSlice';
+import { useGetClientesQuery } from '@/store/features/clientes/clienteApiSlice';
 import { useCreateNegocioMutation, useUpdateNegocioMutation } from '@/store/features/negocios/negocioApiSlice';
 import { CloseIcon, FileTextIcon, DollarIcon } from '@/components/ui/Icons';
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox';
 import { formatCurrency } from '@/lib/utils';
 
 const inputStyle = {
@@ -27,6 +29,36 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
   const { data: etapas = [] } = useGetCatalogoQuery('etapa');
   const { data: tiposSeguimiento = [] } = useGetCatalogoQuery('tipo-seguimiento');
 
+  const { data: clientesData } = useGetClientesQuery();
+  const clientes = React.useMemo(() => {
+    if (!clientesData) return [];
+    return Array.isArray(clientesData) ? clientesData : (clientesData.items || []);
+  }, [clientesData]);
+
+  const [selectedClientId, setSelectedClientId] = useState(cliente?.id ? String(cliente.id) : '');
+
+  const clienteOptions = React.useMemo(() => {
+    return clientes.map((c) => ({
+      id: c.id,
+      label: c.nombre,
+      sublabel: c.telefono ? `Tel: ${c.telefono}` : null,
+    }));
+  }, [clientes]);
+
+  const activeCliente = React.useMemo(() => {
+    if (selectedClientId) {
+      const found = clientes.find((c) => String(c.id) === String(selectedClientId));
+      if (found) return found;
+    }
+    return cliente || clientes[0] || null;
+  }, [selectedClientId, clientes, cliente]);
+
+  React.useEffect(() => {
+    if (cliente?.id) {
+      setSelectedClientId(String(cliente.id));
+    }
+  }, [cliente]);
+
   const { data: vehiculosData } = useGetVehiculosQuery();
   const vehiculos = React.useMemo(() => {
     if (!vehiculosData) return [];
@@ -36,13 +68,14 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
   // Se muestran las unidades de inventario. Si el cliente tiene preferencia de marca, se ordenan primero los de su marca.
   const vehiculosDisponibles = React.useMemo(() => {
     if (!vehiculos.length) return [];
-    if (cliente?.visitaMarcaEspecifica && cliente?.marcaId) {
-      const deSuMarca = vehiculos.filter((v) => v.marcaId === cliente.marcaId);
-      const otras = vehiculos.filter((v) => v.marcaId !== cliente.marcaId);
+    const cl = activeCliente || cliente;
+    if (cl?.visitaMarcaEspecifica && cl?.marcaId) {
+      const deSuMarca = vehiculos.filter((v) => v.marcaId === cl.marcaId);
+      const otras = vehiculos.filter((v) => v.marcaId !== cl.marcaId);
       return [...deSuMarca, ...otras];
     }
     return vehiculos;
-  }, [vehiculos, cliente]);
+  }, [vehiculos, activeCliente, cliente]);
 
   const [createNegocio, { isLoading: isCreating }] = useCreateNegocioMutation();
   const [updateNegocio, { isLoading: isUpdating }] = useUpdateNegocioMutation();
@@ -153,13 +186,19 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       totalUnidad: esVenta && formData.totalUnidad !== '' ? Number(formData.totalUnidad) : (negocioExistente ? negocioExistente.totalUnidad : null),
     };
 
+    const finalClienteId = selectedClientId || cliente?.id;
+    if (!finalClienteId) {
+      notify('Selecciona o busca un cliente.', 'error');
+      return;
+    }
+
     try {
       if (negocioExistente) {
         await updateNegocio({ id: negocioExistente.id, data: payload }).unwrap();
         notify(esVenta ? 'Venta registrada correctamente' : (esEnganche ? 'Enganche registrado correctamente' : 'Negocio actualizado correctamente'));
       } else {
-        await createNegocio({ clienteId: cliente.id, ...payload }).unwrap();
-        notify(esVenta ? 'Venta registrada correctamente' : (esEnganche ? 'Enganche registrado correctamente' : 'Solicitud registrada correctamente'));
+        await createNegocio({ clienteId: Number(finalClienteId), ...payload }).unwrap();
+        notify(esVenta ? 'Venta registrada correctamente' : (esEnganche ? 'Enganche registrado correctamente' : 'Solicitud de crédito registrada correctamente'));
       }
       if (onSuccess) onSuccess();
       onClose();
@@ -217,10 +256,14 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#251f1d' }}>
-                {esVenta ? '💵 Registrar Venta' : (esEnganche ? '💰 Registrar Enganche' : '📄 Crear Solicitud')}
+                {esVenta ? '💵 Registrar Venta' : (esEnganche ? '💰 Registrar Enganche' : '📄 Solicitud de crédito')}
               </h3>
               <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#8e8784' }}>
-                Cliente: <strong style={{ color: '#251f1d' }}>{cliente?.nombre}</strong>
+                {activeCliente ? (
+                  <>Cliente: <strong style={{ color: '#251f1d' }}>{activeCliente.nombre}</strong></>
+                ) : (
+                  'Selecciona o busca un cliente'
+                )}
               </p>
             </div>
           </div>
@@ -230,6 +273,25 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Seleccionar Cliente con buscador de texto */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+              Cliente *
+            </label>
+            {clientes.length === 0 ? (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fef3c7', border: '1px solid #fde68a', fontSize: '12px', color: '#b45309' }}>
+                No hay clientes registrados en la base de datos.
+              </div>
+            ) : (
+              <SearchableCombobox
+                options={clienteOptions}
+                value={selectedClientId}
+                onChange={(val) => setSelectedClientId(String(val || ''))}
+                placeholder="Escribe para buscar cliente por nombre o teléfono..."
+                required
+              />
+            )}
+          </div>
           {/* Vehículo de inventario (mismo formato que prueba de manejo) */}
           <div>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
@@ -439,7 +501,7 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
             >
               {isSubmitting
                 ? 'Guardando…'
-                : (esVenta ? 'Guardar Venta' : (esEnganche ? 'Guardar Enganche' : 'Guardar Solicitud'))}
+                : (esVenta ? 'Guardar Venta' : (esEnganche ? 'Guardar Enganche' : 'Guardar Solicitud de crédito'))}
             </button>
           </div>
         </form>

@@ -26,6 +26,7 @@ import {
   CloseIcon,
 } from '@/components/ui/Icons';
 import { TestDriveModal } from '@/components/demos/TestDriveModal';
+import { NegocioModal } from '@/components/clientes/NegocioModal';
 
 function toTimeStr(val) {
   if (!val) return '09:00';
@@ -93,6 +94,7 @@ export function DashboardView() {
     nombre: '',
     telefono: '',
     correo: '',
+    numeroAcompanantes: 0,
     visitaMarcaEspecifica: false,
     marcaId: '',
     observaciones: 'Visita inicial al showroom para conocer inventario.',
@@ -173,6 +175,7 @@ export function DashboardView() {
       nombre: '',
       telefono: '',
       correo: '',
+      numeroAcompanantes: 0,
       visitaMarcaEspecifica: false,
       marcaId: '',
       observaciones: 'Visita inicial al showroom para conocer inventario.',
@@ -191,6 +194,7 @@ export function DashboardView() {
         nombre: guestForm.nombre.trim(),
         telefono: guestForm.telefono.trim(),
         correo: guestForm.correo?.trim() || null,
+        numeroAcompanantes: Number(guestForm.numeroAcompanantes) || 0,
         visitaMarcaEspecifica: guestForm.visitaMarcaEspecifica,
         marcaId: guestForm.visitaMarcaEspecifica && guestForm.marcaId ? Number(guestForm.marcaId) : null,
         observaciones: guestForm.observaciones?.trim() || null,
@@ -291,13 +295,13 @@ export function DashboardView() {
           <button className="btn btn-primary" onClick={handleOpenGuestModal}>
             <PlusIcon size={14} /> <span>Registrar invitado</span>
           </button>
-          <button className="btn btn-outline" onClick={handleOpenTestDriveModal}>
-            <TestDriveIcon size={14} /> <span>Programar prueba</span>
+          <button className="btn btn-outline" onClick={() => setActiveModal('testdrive')}>
+            <TestDriveIcon size={14} /> <span>Prueba Demo</span>
           </button>
-          <button className="btn btn-outline" onClick={() => router.push('/clientes')}>
-            <FileTextIcon size={14} /> <span>Crear solicitud</span>
+          <button className="btn btn-outline" onClick={() => setActiveModal('request')}>
+            <FileTextIcon size={14} /> <span>Solicitud de crédito</span>
           </button>
-          <button className="btn btn-dark" onClick={() => router.push('/inventario')}>
+          <button className="btn btn-dark" onClick={() => setActiveModal('sale')}>
             <DollarIcon size={14} /> <span>Registrar venta</span>
           </button>
         </div>
@@ -808,7 +812,7 @@ export function DashboardView() {
                       <div className="upcoming-main-col">
                         <h4 className="upcoming-title">{act.nombre}</h4>
                         <p className="upcoming-subtitle">
-                          Responsable: <strong>{act.responsable?.nombre || 'De guardia'}</strong>
+                          Responsable: <strong>{act.responsableNombre || act.responsable?.nombre || 'De guardia'}</strong>
                         </p>
                       </div>
                       <div className="upcoming-status-col">
@@ -904,6 +908,20 @@ export function DashboardView() {
                 />
               </div>
 
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Número de acompañantes
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #d5d0ce', fontSize: 13 }}
+                  value={guestForm.numeroAcompanantes}
+                  onChange={(e) => setGuestForm({ ...guestForm, numeroAcompanantes: e.target.value })}
+                />
+              </div>
+
               <div style={{ background: '#faf9f8', padding: '12px 14px', borderRadius: 10, border: '1px solid #f0edeb' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#251f1d' }}>
                   <input
@@ -976,10 +994,24 @@ export function DashboardView() {
         </div>
       )}
 
-      {/* Modal Completo y Profesional de Prueba de Manejo */}
+      {/* Modal Completo y Profesional de Prueba Demo */}
       <TestDriveModal
         isOpen={activeModal === 'testdrive'}
         onClose={() => setActiveModal(null)}
+      />
+
+      {/* Modal de Solicitud de crédito */}
+      <NegocioModal
+        isOpen={activeModal === 'request'}
+        onClose={() => setActiveModal(null)}
+        modo="solicitud"
+      />
+
+      {/* Modal de Registrar Venta */}
+      <NegocioModal
+        isOpen={activeModal === 'sale'}
+        onClose={() => setActiveModal(null)}
+        modo="venta"
       />
     </div>
   );

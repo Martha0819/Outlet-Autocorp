@@ -42,7 +42,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, fecha, horario, responsableId, observaciones } = body;
+  const { nombre, fecha, horario, responsableId, responsableNombre, estatus, observaciones } = body;
   // Solo Administrador puede dejarla event-wide (null) o elegir otra
   // unidad; cualquier otro rol siempre crea para su propia unidad.
   const unidadNegocioId = esAdministrador(auth.usuario)
@@ -60,6 +60,8 @@ export async function POST(request) {
       horario: new Date(`1970-01-01T${horario}:00Z`),
       unidadNegocioId,
       responsableId: responsableId ? Number(responsableId) : null,
+      responsableNombre: responsableNombre?.trim() || null,
+      estatus: estatus || 'PENDIENTE',
       observaciones: observaciones?.trim() ? observaciones.trim() : null,
     },
     include: { unidadNegocio: true, responsable: { select: USUARIO_PUBLIC_SELECT } },

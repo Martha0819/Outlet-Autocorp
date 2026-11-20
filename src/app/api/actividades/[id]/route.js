@@ -31,6 +31,7 @@ export async function PATCH(request, { params }) {
     data.unidadNegocioId = body.unidadNegocioId ? Number(body.unidadNegocioId) : null;
   }
   if (body.responsableId !== undefined) data.responsableId = body.responsableId ? Number(body.responsableId) : null;
+  if (body.responsableNombre !== undefined) data.responsableNombre = body.responsableNombre?.trim() || null;
   if (body.estatus !== undefined) data.estatus = body.estatus;
   if (body.observaciones !== undefined) data.observaciones = body.observaciones?.trim() ? body.observaciones.trim() : null;
 

@@ -80,6 +80,7 @@ export function ClientesView() {
     nombre: '',
     telefono: '',
     correo: '',
+    numeroAcompanantes: 0,
     visitaMarcaEspecifica: false,
     marcaId: '',
     observaciones: '',
@@ -189,6 +190,7 @@ export function ClientesView() {
       nombre: '',
       telefono: '',
       correo: '',
+      numeroAcompanantes: 0,
       visitaMarcaEspecifica: false,
       marcaId: '',
       observaciones: '',
@@ -201,6 +203,7 @@ export function ClientesView() {
       nombre: client.nombre || '',
       telefono: client.telefono || '',
       correo: client.correo || '',
+      numeroAcompanantes: client.numeroAcompanantes ?? 0,
       visitaMarcaEspecifica: Boolean(client.visitaMarcaEspecifica),
       marcaId: client.marcaId ? String(client.marcaId) : '',
       observaciones: client.observaciones || '',
@@ -224,28 +227,24 @@ export function ClientesView() {
     }
 
     try {
+      const payload = {
+        nombre: formData.nombre.trim(),
+        telefono: formData.telefono.trim(),
+        correo: formData.correo?.trim() || null,
+        numeroAcompanantes: Number(formData.numeroAcompanantes) || 0,
+        visitaMarcaEspecifica: formData.visitaMarcaEspecifica,
+        marcaId: formData.visitaMarcaEspecifica && formData.marcaId ? Number(formData.marcaId) : null,
+        observaciones: formData.observaciones?.trim() || null,
+      };
+
       if (activeClientModal?.isEdit) {
         await updateCliente({
           id: activeClientModal.client.id,
-          data: {
-            nombre: formData.nombre.trim(),
-            telefono: formData.telefono.trim(),
-            correo: formData.correo?.trim() || null,
-            visitaMarcaEspecifica: formData.visitaMarcaEspecifica,
-            marcaId: formData.visitaMarcaEspecifica && formData.marcaId ? Number(formData.marcaId) : null,
-            observaciones: formData.observaciones?.trim() || null,
-          },
+          data: payload,
         }).unwrap();
         notify('Cliente actualizado correctamente');
       } else {
-        await createCliente({
-          nombre: formData.nombre.trim(),
-          telefono: formData.telefono.trim(),
-          correo: formData.correo?.trim() || null,
-          visitaMarcaEspecifica: formData.visitaMarcaEspecifica,
-          marcaId: formData.visitaMarcaEspecifica && formData.marcaId ? Number(formData.marcaId) : null,
-          observaciones: formData.observaciones?.trim() || null,
-        }).unwrap();
+        await createCliente(payload).unwrap();
         notify(`Cliente "${formData.nombre}" registrado`);
       }
       setActiveClientModal(null);
@@ -466,8 +465,13 @@ export function ClientesView() {
                             {getInitials(client.nombre)}
                           </span>
                           <div>
-                            <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d' }}>
-                              {client.nombre}
+                            <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>{client.nombre}</span>
+                              {Number(client.numeroAcompanantes) > 0 && (
+                                <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }} title={`${client.numeroAcompanantes} acompañante(s)`}>
+                                  +{client.numeroAcompanantes} acomp.
+                                </span>
+                              )}
                             </div>
                             <div style={{ fontSize: '11px', color: '#8e8784' }}>
                               Alta: {formatDate(client.createdAt || client.fechaRegistro, 'short')} · {demoCount > 0 ? `${demoCount} pruebas` : '1 visita'}
@@ -527,9 +531,119 @@ export function ClientesView() {
                         {client.observaciones ? `"${client.observaciones}"` : '—'}
                       </td>
 
-                      {/* Acciones */}
+                      {/* Acciones Rápidas */}
                       <td style={{ padding: '14px 18px', textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          {/* 1. Venta rápida */}
+                          {(puedeCrearNegocio || puedeEditarNegocio) && (
+                            <button
+                              onClick={() => setNegocioModal({ cliente: client, modo: 'venta' })}
+                              title="Registrar venta"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #251f1d',
+                                background: '#251f1d',
+                                color: '#ffffff',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ff8901'; e.currentTarget.style.borderColor = '#ff8901'; e.currentTarget.style.color = '#251f1d'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#251f1d'; e.currentTarget.style.borderColor = '#251f1d'; e.currentTarget.style.color = '#ffffff'; }}
+                            >
+                              <span>💵</span>
+                              <span>Venta</span>
+                            </button>
+                          )}
+
+                          {/* 2. Solicitud de crédito rápida */}
+                          {puedeCrearNegocio && (
+                            <button
+                              onClick={() => setNegocioModal({ cliente: client, modo: 'solicitud' })}
+                              title="Solicitud de crédito"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #d5d0ce',
+                                background: '#ffffff',
+                                color: '#251f1d',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ff8901'; e.currentTarget.style.backgroundColor = '#fff5eb'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#d5d0ce'; e.currentTarget.style.backgroundColor = '#ffffff'; }}
+                            >
+                              <span>📄</span>
+                              <span>Solicitud</span>
+                            </button>
+                          )}
+
+                          {/* 3. Prueba Demo rápida */}
+                          <button
+                            onClick={() => {
+                              setDemoClientId(client.id);
+                              setIsDemoModalOpen(true);
+                            }}
+                            title="Prueba Demo"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              padding: '5px 8px',
+                              borderRadius: '6px',
+                              border: '1px solid #ff8901',
+                              background: '#fff5eb',
+                              color: '#ea580c',
+                              fontSize: '11px',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ff8901'; e.currentTarget.style.color = '#251f1d'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fff5eb'; e.currentTarget.style.color = '#ea580c'; }}
+                          >
+                            <span>🚗</span>
+                            <span>Demo</span>
+                          </button>
+
+                          {/* 4. Enganche rápido */}
+                          {(puedeCrearNegocio || puedeEditarNegocio) && (
+                            <button
+                              onClick={() => setNegocioModal({ cliente: client, modo: 'enganche' })}
+                              title="Registrar enganche"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '5px 8px',
+                                borderRadius: '6px',
+                                border: '1px solid #16a34a',
+                                background: '#f0fdf4',
+                                color: '#16a34a',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#16a34a'; e.currentTarget.style.color = '#ffffff'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4'; e.currentTarget.style.color = '#16a34a'; }}
+                            >
+                              <span>💰</span>
+                              <span>Enganche</span>
+                            </button>
+                          )}
+
+                          {/* 5. Ver Ficha 360 */}
                           <button
                             onClick={() => setActive360Client(client)}
                             title="Ver Ficha 360"
@@ -545,6 +659,7 @@ export function ClientesView() {
                               justifyContent: 'center',
                               cursor: 'pointer',
                               transition: 'all 0.15s',
+                              flexShrink: 0,
                             }}
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor = '#faf9f8';
@@ -558,6 +673,7 @@ export function ClientesView() {
                             <EyeIcon size={14} />
                           </button>
 
+                          {/* 6. Editar cliente */}
                           {puedeEditar && (
                             <button
                               onClick={() => openEditModal(client)}
@@ -574,6 +690,7 @@ export function ClientesView() {
                                 justifyContent: 'center',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s',
+                                flexShrink: 0,
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor = '#faf9f8';
@@ -696,6 +813,23 @@ export function ClientesView() {
                     Opcional para cotizaciones y solicitudes
                   </span>
                 </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: 4 }}>
+                  Número de acompañantes
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  style={inputStyle}
+                  value={formData.numeroAcompanantes}
+                  onChange={(e) => setFormData({ ...formData, numeroAcompanantes: e.target.value })}
+                />
+                <span style={{ fontSize: 10, color: '#8e8784', marginTop: 2, display: 'block' }}>
+                  Cantidad de personas adicionales que acuden con el cliente
+                </span>
               </div>
 
               {/* CHECKBOX: ¿Visita una marca en específico? */}
@@ -894,7 +1028,7 @@ export function ClientesView() {
                       cursor: 'pointer',
                     }}
                   >
-                    🌐 Programar prueba
+                    🚗 Prueba Demo
                   </button>
                   {puedeCrearNegocio && (
                     <button
@@ -913,7 +1047,7 @@ export function ClientesView() {
                         cursor: 'pointer',
                       }}
                     >
-                      📄 Crear solicitud
+                      📄 Solicitud de crédito
                     </button>
                   )}
                   {(puedeCrearNegocio || puedeEditarNegocio) && (
@@ -982,6 +1116,7 @@ export function ClientesView() {
                       <div style={{ background: '#faf9f8', borderRadius: '10px', padding: '14px', border: '1px solid #f0edeb', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div><strong style={{ color: '#8e8784' }}>Celular:</strong> <span style={{ fontWeight: 700, color: '#251f1d' }}>{formatPhoneDisplay(currentClient.telefono)}</span></div>
                         <div><strong style={{ color: '#8e8784' }}>Correo:</strong> <span style={{ color: '#251f1d' }}>{currentClient.correo || 'No especificado'}</span></div>
+                        <div><strong style={{ color: '#8e8784' }}>Acompañantes:</strong> <span style={{ fontWeight: 700, color: '#251f1d' }}>{currentClient.numeroAcompanantes ?? 0} persona{currentClient.numeroAcompanantes === 1 ? '' : 's'}</span></div>
                         <div>
                           <strong style={{ color: '#8e8784' }}>Marca de interés:</strong>{' '}
                           {currentClient.visitaMarcaEspecifica && currentClient.marca ? (

@@ -8,6 +8,7 @@ import { useGetVehiculosQuery } from '@/store/features/vehiculos/vehiculoApiSlic
 import { useGetUsuariosQuery } from '@/store/features/usuarios/usuarioApiSlice';
 import { useCreateDemoMutation } from '@/store/features/demos/demoApiSlice';
 import { CloseIcon, TestDriveIcon } from '@/components/ui/Icons';
+import { SearchableCombobox } from '@/components/ui/SearchableCombobox';
 
 export function TestDriveModal({
   isOpen,
@@ -32,6 +33,14 @@ export function TestDriveModal({
 
   const { data: usuarios = [] } = useGetUsuariosQuery();
   const [createDemo, { isLoading: isSubmitting }] = useCreateDemoMutation();
+
+  const clienteOptions = React.useMemo(() => {
+    return clientes.map((c) => ({
+      id: c.id,
+      label: c.nombre,
+      sublabel: c.telefono ? `Tel: ${c.telefono}` : null,
+    }));
+  }, [clientes]);
 
   const [formData, setFormData] = useState({
     clienteId: defaultClientId ? String(defaultClientId) : (clientes[0]?.id ? String(clientes[0].id) : ''),
@@ -149,7 +158,7 @@ export function TestDriveModal({
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#251f1d' }}>
-                Programar Prueba de Manejo
+                Programar Prueba Demo
               </h3>
               <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#8e8784' }}>
                 Agenda de demostración y recorrido de prueba
@@ -185,28 +194,13 @@ export function TestDriveModal({
                 No hay clientes registrados en la base de datos. Primero registra un cliente o invitado.
               </div>
             ) : (
-              <select
+              <SearchableCombobox
+                options={clienteOptions}
                 value={formData.clienteId}
-                onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
+                onChange={(val) => setFormData({ ...formData, clienteId: String(val || '') })}
+                placeholder="Escribe para buscar cliente por nombre o teléfono..."
                 required
-                style={{
-                  width: '100%',
-                  padding: '9px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #d5d0ce',
-                  fontSize: '13px',
-                  backgroundColor: '#ffffff',
-                  color: '#251f1d',
-                  outline: 'none',
-                }}
-              >
-                <option value="">Seleccionar cliente...</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre} {c.telefono ? `(${c.telefono})` : ''}
-                  </option>
-                ))}
-              </select>
+              />
             )}
           </div>
 

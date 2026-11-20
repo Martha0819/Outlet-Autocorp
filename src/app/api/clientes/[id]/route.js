@@ -24,6 +24,9 @@ export async function PATCH(request, { params }) {
   if (body.nombre !== undefined) data.nombre = body.nombre;
   if (body.telefono !== undefined) data.telefono = body.telefono;
   if (body.correo !== undefined) data.correo = body.correo?.trim() ? body.correo.trim() : null;
+  if (body.numeroAcompanantes !== undefined || body.acompanantes !== undefined) {
+    data.numeroAcompanantes = Number(body.numeroAcompanantes ?? body.acompanantes ?? 0) || 0;
+  }
   if (body.observaciones !== undefined) data.observaciones = body.observaciones?.trim() ? body.observaciones.trim() : null;
   if (body.visitaMarcaEspecifica !== undefined) {
     data.visitaMarcaEspecifica = Boolean(body.visitaMarcaEspecifica);

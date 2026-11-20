@@ -9,8 +9,15 @@ export async function GET(request) {
   if (auth.error) return auth.error;
 
   // Guardia no tiene su propia unidadNegocioId: se infiere de a qué unidad
-  // pertenece el usuario asignado.
-  const where = esAdministrador(auth.usuario) ? {} : { usuario: { unidadNegocioId: auth.usuario.unidadNegocioId } };
+  // pertenece el usuario asignado, o es visible para todos si es libre.
+  const where = esAdministrador(auth.usuario)
+    ? {}
+    : {
+        OR: [
+          { usuario: { unidadNegocioId: auth.usuario.unidadNegocioId } },
+          { usuarioId: null },
+        ],
+      };
   const pagination = parsePagination(request);
 
   if (!pagination) {
@@ -40,13 +47,14 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { usuarioId, fecha, horarioInicio, horarioFin, turnoId, area } = body;
+  const { usuarioId, asesorNombre, asesorCorreo, asesorTelefono, fecha, horarioInicio, horarioFin, turnoId, area } = body;
 
-  if (!usuarioId || !fecha || !turnoId) {
-    return Response.json({ error: 'usuarioId, fecha y turnoId son requeridos' }, { status: 400 });
+  const nombreFinal = asesorNombre?.trim() || '';
+  if ((!usuarioId && !nombreFinal) || !fecha || !turnoId) {
+    return Response.json({ error: 'El asesor, fecha y turno son requeridos' }, { status: 400 });
   }
 
-  if (!esAdministrador(auth.usuario)) {
+  if (usuarioId && !esAdministrador(auth.usuario)) {
     const usuarioAsignado = await prisma.usuario.findUnique({ where: { id: Number(usuarioId) } });
     if (!usuarioAsignado || usuarioAsignado.unidadNegocioId !== auth.usuario.unidadNegocioId) {
       return Response.json({ error: 'No puedes programar guardias para usuarios de otra unidad de negocio' }, { status: 403 });
@@ -55,7 +63,10 @@ export async function POST(request) {
 
   const guardia = await prisma.guardia.create({
     data: {
-      usuarioId: Number(usuarioId),
+      usuarioId: usuarioId ? Number(usuarioId) : null,
+      asesorNombre: nombreFinal || null,
+      asesorCorreo: asesorCorreo?.trim() || null,
+      asesorTelefono: asesorTelefono?.trim() || null,
       fecha: new Date(fecha),
       horarioInicio: horarioInicio ? new Date(`1970-01-01T${horarioInicio}:00Z`) : null,
       horarioFin: horarioFin ? new Date(`1970-01-01T${horarioFin}:00Z`) : null,

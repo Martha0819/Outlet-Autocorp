@@ -41,7 +41,7 @@ export async function POST(request) {
   if (auth.error) return auth.error;
 
   const body = await request.json();
-  const { nombre, telefono, correo, visitaMarcaEspecifica, marcaId, observaciones } = body;
+  const { nombre, telefono, correo, numeroAcompanantes, acompanantes, visitaMarcaEspecifica, marcaId, observaciones } = body;
 
   if (!nombre?.trim() || !telefono?.trim()) {
     return Response.json({ error: 'nombre y telefono son requeridos' }, { status: 400 });
@@ -52,6 +52,7 @@ export async function POST(request) {
       nombre,
       telefono,
       correo: correo?.trim() ? correo.trim() : null,
+      numeroAcompanantes: Number(numeroAcompanantes ?? acompanantes ?? 0) || 0,
       visitaMarcaEspecifica: Boolean(visitaMarcaEspecifica),
       marcaId: visitaMarcaEspecifica && marcaId ? Number(marcaId) : null,
       // Siempre la unidad del usuario que registra — un cliente queda
