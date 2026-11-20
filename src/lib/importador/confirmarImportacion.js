@@ -1,11 +1,13 @@
 import { prisma } from '@/lib/prisma';
 import { registrarBitacora } from '@/lib/auth/bitacora';
+import { aNumero, numeroOpcional } from './normalizar';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'precioLista'];
+// "nombre" (descripción) NO es obligatorio: si falta, se usa el modelo como
+// descripción (ver más abajo) en vez de bloquear la fila.
+const CAMPOS_OBLIGATORIOS = ['modelo', 'anio', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
-  nombre: 'descripción',
   anio: 'año',
   precioLista: 'precio de lista',
 };
@@ -44,13 +46,13 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
       continue;
     }
 
-    const anio = Number(valores.anio);
+    const anio = aNumero(valores.anio);
     if (!Number.isInteger(anio)) {
       conError.push({ datosOriginales: fila.datosOriginales, motivo: 'año no numérico' });
       continue;
     }
 
-    const precioLista = Number(valores.precioLista);
+    const precioLista = aNumero(valores.precioLista);
     if (!Number.isFinite(precioLista) || precioLista <= 0) {
       conError.push({ datosOriginales: fila.datosOriginales, motivo: 'precio de lista no numérico' });
       continue;
@@ -78,10 +80,10 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
     try {
       const vehiculo = await prisma.vehiculo.create({
         data: {
-          nombre: valores.nombre,
+          nombre: valores.nombre?.trim() || valores.modelo,
           modelo: valores.modelo,
           anio,
-          km: valores.km ? Number(valores.km) : 0,
+          km: numeroOpcional(valores.km) ?? 0,
           vin,
           transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
           colorExterior: valores.colorExterior?.trim() ? valores.colorExterior.trim() : null,
@@ -89,11 +91,11 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
           marcaId: fila.marcaId,
           unidadNegocioId: fila.unidadNegocioId,
           servicioId: fila.servicioId ?? null,
-          precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
+          precioSinIva: numeroOpcional(valores.precioSinIva),
           precioLista,
-          precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
-          bono: valores.bono ? Number(valores.bono) : null,
-          diasInventario: valores.diasInventario ? Number(valores.diasInventario) : null,
+          precioRemate: numeroOpcional(valores.precioRemate),
+          bono: numeroOpcional(valores.bono),
+          diasInventario: numeroOpcional(valores.diasInventario),
         },
       });
       await registrarBitacora({
@@ -109,6 +111,9 @@ export async function confirmarFilas({ mapeoFinal, filasDecididas, usuarioActual
       // y nunca interrumpe el lote: las filas ya creadas antes deben quedar
       // guardadas, y las que faltan deben seguir intentándose (spec: una
       // fila mala nunca bloquea a las demás).
+      if (error.code !== 'P2002') {
+        console.error('Error al crear vehículo durante importación:', error);
+      }
       const motivo = error.code === 'P2002' ? 'VIN duplicado' : 'no se pudo crear el vehículo con los datos dados';
       conError.push({ datosOriginales: fila.datosOriginales, motivo });
       continue;

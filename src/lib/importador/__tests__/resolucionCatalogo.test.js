@@ -71,6 +71,16 @@ describe('clasificarFilas', () => {
     expect(marcasDespues).toBe(marcasAntes);
   });
 
+  it('no exige descripción: si falta (o la columna mapeada viene vacía), usa el modelo como descripción', async () => {
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ Descripcion: '' })],
+      mapeo: MAPEO_BASE,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.nombre).toBe('Sentra');
+  });
+
   it('marca una fila como "error" cuando falta un campo obligatorio', async () => {
     const [resultado] = await clasificarFilas({
       filas: [filaBase({ Modelo: '' })],
@@ -103,6 +113,38 @@ describe('clasificarFilas', () => {
     expect(resultado.valoresResueltos.precioRemate).toBeNull();
     expect(resultado.valoresResueltos.bono).toBeNull();
     expect(resultado.valoresResueltos.diasInventario).toBeNull();
+  });
+
+  it('resuelve precios/bono con formato de moneda y texto alrededor (ej. "$40,000.00 DESCUENTO"), en vez de fallar', async () => {
+    const mapeoConPrecios = [
+      ...MAPEO_BASE,
+      { columna: 'PrecioRemate', campo: 'precioRemate' },
+      { columna: 'Bono', campo: 'bono' },
+    ];
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({
+        PrecioLista: '$1,091,900.00',
+        PrecioRemate: '$1,051,900.00',
+        Bono: '$40,000.00 DESCUENTO',
+      })],
+      mapeo: mapeoConPrecios,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.precioLista).toBe(1091900);
+    expect(resultado.valoresResueltos.precioRemate).toBe(1051900);
+    expect(resultado.valoresResueltos.bono).toBe(40000);
+  });
+
+  it('un bono sin ningún número (ej. "TANQUE /TAPETES O PELICULA") queda en null, no rompe la fila', async () => {
+    const mapeoConBono = [...MAPEO_BASE, { columna: 'Bono', campo: 'bono' }];
+    const [resultado] = await clasificarFilas({
+      filas: [filaBase({ Bono: 'TANQUE /TAPETES O PELICULA' })],
+      mapeo: mapeoConBono,
+    });
+
+    expect(resultado.estado).toBe('lista');
+    expect(resultado.valoresResueltos.bono).toBeNull();
   });
 
   it('resuelve colorExterior y colorInterior cuando las columnas están mapeadas', async () => {

@@ -60,6 +60,18 @@ describe('confirmarFilas', () => {
     expect(bitacora).toHaveLength(2);
   });
 
+  it('no exige descripción: si la columna mapeada viene vacía, usa el modelo como descripción', async () => {
+    const fila = filaDecidida(catalogo, {
+      datosOriginales: { ...filaDecidida(catalogo).datosOriginales, Descripcion: '', VIN: 'VIN-SIN-DESC' },
+    });
+
+    const resumen = await confirmarFilas({ mapeoFinal: MAPEO_BASE, filasDecididas: [fila], usuarioActual: administrador });
+
+    expect(resumen.conError.cuenta).toBe(0);
+    const vehiculo = await prisma.vehiculo.findUnique({ where: { vin: 'VIN-SIN-DESC' } });
+    expect(vehiculo.nombre).toBe('Sentra');
+  });
+
   it('una fila que falla al confirmar (VIN duplicado) no revierte las demás filas ya creadas en la misma corrida', async () => {
     await prisma.vehiculo.create({
       data: { nombre: 'Ya existente', modelo: 'Sentra', anio: 2019, km: 0, vin: 'VIN-DUP', transmision: 'Manual', marcaId: catalogo.nissan.id, unidadNegocioId: catalogo.matriz.id },

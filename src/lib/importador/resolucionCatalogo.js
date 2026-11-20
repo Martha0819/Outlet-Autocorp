@@ -1,11 +1,13 @@
 import { prisma } from '@/lib/prisma';
-import { normalizarTexto } from './normalizar';
+import { normalizarTexto, aNumero, numeroOpcional } from './normalizar';
 
-const CAMPOS_OBLIGATORIOS = ['modelo', 'nombre', 'anio', 'marca', 'precioLista'];
+// "nombre" (descripción) NO es obligatorio: muchos archivos reales no traen
+// una columna de descripción separada del modelo, así que si falta se usa el
+// propio modelo como descripción (ver más abajo), en vez de bloquear la fila.
+const CAMPOS_OBLIGATORIOS = ['modelo', 'anio', 'marca', 'precioLista'];
 
 const ETIQUETA_CAMPO = {
   modelo: 'modelo',
-  nombre: 'descripción',
   anio: 'año',
   marca: 'marca',
   precioLista: 'precio de lista',
@@ -57,13 +59,13 @@ export async function clasificarFilas({ filas, mapeo }) {
       continue;
     }
 
-    const anio = Number(valores.anio);
+    const anio = aNumero(valores.anio);
     if (!Number.isInteger(anio)) {
       resultado.push({ datosOriginales: filaCruda, estado: 'error', motivoError: 'año no numérico' });
       continue;
     }
 
-    const precioLista = Number(valores.precioLista);
+    const precioLista = aNumero(valores.precioLista);
     if (!Number.isFinite(precioLista) || precioLista <= 0) {
       resultado.push({ datosOriginales: filaCruda, estado: 'error', motivoError: 'precio de lista no numérico' });
       continue;
@@ -101,19 +103,19 @@ export async function clasificarFilas({ filas, mapeo }) {
       datosOriginales: filaCruda,
       estado: 'lista',
       valoresResueltos: {
-        nombre: valores.nombre,
+        nombre: valores.nombre?.trim() || valores.modelo,
         modelo: valores.modelo,
         anio,
-        km: valores.km ? Number(valores.km) : 0,
+        km: numeroOpcional(valores.km) ?? 0,
         vin,
         transmision: valores.transmision?.trim() ? valores.transmision.trim() : null,
         colorExterior: valores.colorExterior?.trim() ? valores.colorExterior.trim() : null,
         colorInterior: valores.colorInterior?.trim() ? valores.colorInterior.trim() : null,
-        precioSinIva: valores.precioSinIva ? Number(valores.precioSinIva) : null,
-        precioLista: Number(valores.precioLista),
-        precioRemate: valores.precioRemate ? Number(valores.precioRemate) : null,
-        bono: valores.bono ? Number(valores.bono) : null,
-        diasInventario: valores.diasInventario ? Number(valores.diasInventario) : null,
+        precioSinIva: numeroOpcional(valores.precioSinIva),
+        precioLista,
+        precioRemate: numeroOpcional(valores.precioRemate),
+        bono: numeroOpcional(valores.bono),
+        diasInventario: numeroOpcional(valores.diasInventario),
         marcaId: marca.id,
         servicioId: servicio?.id ?? null,
       },

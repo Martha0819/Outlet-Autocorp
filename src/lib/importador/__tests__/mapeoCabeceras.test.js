@@ -38,6 +38,24 @@ describe('sugerirMapeo', () => {
     ]);
   });
 
+  it('reconoce las cabeceras reales de un archivo de ejemplo (numero de serie, precio de costo, etc.)', () => {
+    const cabeceras = ['MODELO', 'AÑO', 'NUMERO DE SERIE', 'COLOR EXTERIOR', 'COLOR INTERIOR', 'PRECIO DE COSTO', 'PRECIO PUBLICO', 'BONO OUTLET', 'PRECIO FINAL REMATE', 'DIAS INVENTARIO'];
+    const mapeo = sugerirMapeo(cabeceras);
+
+    expect(mapeo).toEqual([
+      { columna: 'MODELO', campo: 'modelo' },
+      { columna: 'AÑO', campo: 'anio' },
+      { columna: 'NUMERO DE SERIE', campo: 'vin' },
+      { columna: 'COLOR EXTERIOR', campo: 'colorExterior' },
+      { columna: 'COLOR INTERIOR', campo: 'colorInterior' },
+      { columna: 'PRECIO DE COSTO', campo: 'precioSinIva' },
+      { columna: 'PRECIO PUBLICO', campo: 'precioLista' },
+      { columna: 'BONO OUTLET', campo: 'bono' },
+      { columna: 'PRECIO FINAL REMATE', campo: 'precioRemate' },
+      { columna: 'DIAS INVENTARIO', campo: 'diasInventario' },
+    ]);
+  });
+
   it('deja sin asignar una columna que no corresponde a ningún campo del catálogo', () => {
     const mapeo = sugerirMapeo(['Modelo', 'Comentario interno']);
 
