@@ -78,6 +78,8 @@ export function GuardiasView() {
 
   const [subTab, setSubTab] = useState('calendario'); // 'calendario' | 'actividades'
   const [responsibleFilter, setResponsibleFilter] = useState('all');
+  const [areaFilter, setAreaFilter] = useState('all');
+  const [horarioFilter, setHorarioFilter] = useState('all');
   const [activityStatusFilter, setActivityStatusFilter] = useState('all');
 
   // Modo de visualización semanal: 'weekend' (Viernes a Domingo) o 'full' (Toda la semana)
@@ -150,13 +152,57 @@ export function GuardiasView() {
     return Array.from(set).sort();
   }, [guardias]);
 
+  // Lista de áreas/ubicaciones únicas para el filtro
+  const allAreas = useMemo(() => {
+    const map = new Map();
+    guardias.forEach((g) => {
+      if (g.area && g.area.trim()) {
+        const raw = g.area.trim();
+        const key = raw.toLowerCase();
+        if (!map.has(key)) {
+          let label = raw;
+          if (key === 'seminuevos') label = 'Seminuevos';
+          else if (key === 'nuevos') label = 'Nuevos';
+          else label = raw.charAt(0).toUpperCase() + raw.slice(1);
+          map.set(key, { key, label });
+        }
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [guardias]);
+
+  // Lista de horarios únicos para el filtro
+  const allHorarios = useMemo(() => {
+    const set = new Set();
+    guardias.forEach((g) => {
+      const ini = toTimeStr(g.horarioInicio);
+      const fin = toTimeStr(g.horarioFin);
+      if (ini && fin) {
+        set.add(`${ini} - ${fin}`);
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [guardias]);
+
+  const hasActiveFilters = responsibleFilter !== 'all' || areaFilter !== 'all' || horarioFilter !== 'all';
+
   const filteredGuardias = useMemo(() => {
     return guardias.filter((g) => {
-      if (responsibleFilter === 'all') return true;
-      const nombre = g.asesorNombre || g.usuario?.nombre;
-      return nombre === responsibleFilter;
+      if (responsibleFilter !== 'all') {
+        const nombre = g.asesorNombre || g.usuario?.nombre;
+        if (nombre !== responsibleFilter) return false;
+      }
+      if (areaFilter !== 'all') {
+        const a = (g.area || '').trim().toLowerCase();
+        if (a !== areaFilter.toLowerCase()) return false;
+      }
+      if (horarioFilter !== 'all') {
+        const h = `${toTimeStr(g.horarioInicio)} - ${toTimeStr(g.horarioFin)}`;
+        if (h !== horarioFilter) return false;
+      }
+      return true;
     });
-  }, [guardias, responsibleFilter]);
+  }, [guardias, responsibleFilter, areaFilter, horarioFilter]);
 
   const filteredActivities = useMemo(() => {
     return actividades.filter((a) => {
@@ -595,6 +641,86 @@ export function GuardiasView() {
                   ))}
                 </select>
               </div>
+
+              {/* Filtro por Ubicación / Área */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#6e6764', fontWeight: 600 }}>Ubicación / Área:</span>
+                <select
+                  value={areaFilter}
+                  onChange={(e) => setAreaFilter(e.target.value)}
+                  style={{
+                    padding: '7px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d5d0ce',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    background: '#ffffff',
+                    color: '#251f1d',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">Todas las áreas</option>
+                  {allAreas.map((item) => (
+                    <option key={item.key} value={item.key}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por Horario */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#6e6764', fontWeight: 600 }}>Horario:</span>
+                <select
+                  value={horarioFilter}
+                  onChange={(e) => setHorarioFilter(e.target.value)}
+                  style={{
+                    padding: '7px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d5d0ce',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    background: '#ffffff',
+                    color: '#251f1d',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="all">Todos los horarios</option>
+                  {allHorarios.map((horario) => (
+                    <option key={horario} value={horario}>
+                      {horario}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botón para restablecer filtros */}
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setResponsibleFilter('all');
+                    setAreaFilter('all');
+                    setHorarioFilter('all');
+                  }}
+                  title="Restablecer filtros"
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #fed7aa',
+                    background: '#fff7ed',
+                    color: '#c2410c',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  ✕ Limpiar filtros
+                </button>
+              )}
             </div>
           </div>
 
