@@ -21,7 +21,6 @@ async function peticion(url, { method = 'GET', body } = {}) {
 
 describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', () => {
   let catalogo;
-  let etapa;
 
   async function crearVehiculo(overrides = {}) {
     return prisma.vehiculo.create({
@@ -46,18 +45,15 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
 
   beforeEach(async () => {
     await prisma.negocio.deleteMany();
-    await prisma.etapa.deleteMany();
     await prisma.tipoSeguimiento.deleteMany();
     await limpiarBaseDePrueba();
     catalogo = await sembrarCatalogo();
-    etapa = await prisma.etapa.create({ data: { nombre: `Prospecto-${Date.now()}`, orden: 1 } });
   });
 
   afterEach(() => vi.doUnmock('next/headers'));
 
   afterAll(async () => {
     await prisma.negocio.deleteMany();
-    await prisma.etapa.deleteMany();
     await prisma.tipoSeguimiento.deleteMany();
     await limpiarBaseDePrueba();
     await prisma.$disconnect();
@@ -71,7 +67,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const respuesta = await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'SOLICITUD' },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'SOLICITUD' },
     }));
     expect(respuesta.status).toBe(201);
     const negocio = await respuesta.json();
@@ -88,7 +84,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const respuesta = await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
     }));
     expect(respuesta.status).toBe(201);
     const negocio = await respuesta.json();
@@ -108,7 +104,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'VENTA', totalUnidad: 300000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'VENTA', totalUnidad: 300000 },
     }));
 
     expect((await prisma.vehiculo.findUnique({ where: { id: vehiculo.id } })).estatus).toBe('VENDIDO');
@@ -122,7 +118,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const negocio = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id },
     }))).json();
 
     expect(negocio.tipo).toBe('SOLICITUD');
@@ -137,7 +133,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const respuesta = await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'SOLICITUD' },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'SOLICITUD' },
     }));
 
     expect(respuesta.status).toBe(400);
@@ -154,7 +150,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const creado = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
     }))).json();
     expect((await prisma.vehiculo.findUnique({ where: { id: vehiculo.id } })).estatus).toBe('APARTADO');
 
@@ -185,7 +181,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const creado = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
     }))).json();
 
     const { PATCH } = await rutaConSesion('../[id]/route.js', token);
@@ -206,7 +202,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const creado = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'VENTA', totalUnidad: 300000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'VENTA', totalUnidad: 300000 },
     }))).json();
     expect((await prisma.vehiculo.findUnique({ where: { id: vehiculo.id } })).estatus).toBe('VENDIDO');
 
@@ -228,7 +224,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const creado = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculoPropio.id, tipo: 'SOLICITUD' },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculoPropio.id, tipo: 'SOLICITUD' },
     }))).json();
 
     const { PATCH } = await rutaConSesion('../[id]/route.js', token);
@@ -249,7 +245,7 @@ describe('POST/PATCH /api/negocios — tipo y estatus del vehículo vinculado', 
     const { POST } = await rutaConSesion('../route.js', token);
     const creado = await (await POST(await peticion('http://localhost/api/negocios', {
       method: 'POST',
-      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, etapaId: etapa.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
+      body: { clienteId: cliente.id, lineaNegocioId: catalogo.nuevos.id, vehiculoId: vehiculo.id, tipo: 'APARTADO', enganche: 50000 },
     }))).json();
 
     const bitacoraAntes = await prisma.bitacora.count({ where: { recurso: 'vehiculo', recursoId: vehiculo.id } });

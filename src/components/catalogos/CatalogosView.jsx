@@ -22,7 +22,6 @@ import {
   GridIcon,
   UsersIcon,
   ClockIcon,
-  ListIcon,
 } from '@/components/ui/Icons';
 
 // Un catálogo por sección de acordeón. "fields" define qué inputs se
@@ -55,16 +54,6 @@ const CATALOGOS_META = [
   // 'permiso' se movió a /usuarios (subpestaña Permisos) — ver nota en
   // src/lib/catalogos/config.js.
   { tipo: 'turno', label: 'Turnos', icon: ClockIcon, hasActivo: false, fields: [{ name: 'nombre', label: 'Nombre', type: 'text' }] },
-  {
-    tipo: 'etapa',
-    label: 'Etapas del proceso',
-    icon: ListIcon,
-    hasActivo: true,
-    fields: [
-      { name: 'nombre', label: 'Nombre', type: 'text' },
-      { name: 'orden', label: 'Orden', type: 'number' },
-    ],
-  },
 ];
 
 function emptyForm(fields) {

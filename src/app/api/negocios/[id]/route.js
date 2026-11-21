@@ -11,7 +11,6 @@ const INCLUDE_NEGOCIO = {
   unidadNegocio: true,
   lineaNegocio: true,
   tipoSeguimiento: true,
-  etapa: true,
   vehiculo: { include: { marca: true } },
 };
 
@@ -31,7 +30,6 @@ export async function PATCH(request, { params }) {
   const data = {};
 
   if (body.lineaNegocioId !== undefined) data.lineaNegocioId = Number(body.lineaNegocioId);
-  if (body.etapaId !== undefined) data.etapaId = Number(body.etapaId);
   if (body.tipoSeguimientoId !== undefined) data.tipoSeguimientoId = body.tipoSeguimientoId ? Number(body.tipoSeguimientoId) : null;
   if (body.observaciones !== undefined) data.observaciones = body.observaciones?.trim() ? body.observaciones.trim() : null;
   if (body.folio !== undefined) data.folio = body.folio?.trim() ? body.folio.trim() : null;
@@ -127,7 +125,7 @@ export async function PATCH(request, { params }) {
       return Response.json({ error: 'No encontrado' }, { status: 404 });
     }
     if (error.code === 'P2003') {
-      return Response.json({ error: 'La línea de negocio, etapa, seguimiento o vehículo indicado no existe' }, { status: 400 });
+      return Response.json({ error: 'La línea de negocio, seguimiento o vehículo indicado no existe' }, { status: 400 });
     }
     throw error;
   }

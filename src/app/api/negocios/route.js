@@ -11,7 +11,6 @@ const INCLUDE_NEGOCIO = {
   unidadNegocio: true,
   lineaNegocio: true,
   tipoSeguimiento: true,
-  etapa: true,
   vehiculo: { include: { marca: true } },
 };
 
@@ -39,7 +38,6 @@ export async function POST(request) {
   const {
     clienteId,
     lineaNegocioId,
-    etapaId,
     tipoSeguimientoId,
     vehiculoId,
     enganche,
@@ -48,8 +46,8 @@ export async function POST(request) {
     observaciones,
   } = body;
 
-  if (!clienteId || !lineaNegocioId || !etapaId) {
-    return Response.json({ error: 'clienteId, lineaNegocioId y etapaId son requeridos' }, { status: 400 });
+  if (!clienteId || !lineaNegocioId) {
+    return Response.json({ error: 'clienteId y lineaNegocioId son requeridos' }, { status: 400 });
   }
 
   // `tipo` es la fuente única de verdad de qué es este negocio (y de si
@@ -85,7 +83,6 @@ export async function POST(request) {
         usuarioId: auth.usuario.id,
         unidadNegocioId: auth.usuario.unidadNegocioId,
         lineaNegocioId: Number(lineaNegocioId),
-        etapaId: Number(etapaId),
         tipoSeguimientoId: tipoSeguimientoId ? Number(tipoSeguimientoId) : null,
         vehiculoId: vehiculoId ? Number(vehiculoId) : null,
         tipo,
@@ -99,7 +96,7 @@ export async function POST(request) {
     });
   } catch (error) {
     if (error.code === 'P2003') {
-      return Response.json({ error: 'El cliente, línea de negocio, etapa, seguimiento o vehículo indicado no existe' }, { status: 400 });
+      return Response.json({ error: 'El cliente, línea de negocio, seguimiento o vehículo indicado no existe' }, { status: 400 });
     }
     throw error;
   }

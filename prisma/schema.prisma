@@ -117,16 +117,6 @@ model Turno {
   @@map("turno")
 }
 
-model Etapa {
-  id     Int     @id @default(autoincrement())
-  nombre String  @unique
-  orden  Int
-  activo Boolean @default(true)
-
-  negocios Negocio[]
-
-  @@map("etapa")
-}
 
 model TipoSeguimiento {
   id     Int    @id @default(autoincrement())
@@ -320,7 +310,6 @@ model Negocio {
   unidadNegocioId   Int       @map("unidad_negocio_id")
   lineaNegocioId    Int       @map("linea_negocio_id")
   tipoSeguimientoId Int?      @map("tipo_seguimiento_id")
-  etapaId           Int       @map("etapa_id")
   vehiculoId        Int?      @map("vehiculo_id")
 
   tipo        TipoNegocio @default(SOLICITUD)
@@ -339,7 +328,6 @@ model Negocio {
   unidadNegocio   UnidadNegocio    @relation(fields: [unidadNegocioId], references: [id])
   lineaNegocio    LineaNegocio     @relation(fields: [lineaNegocioId], references: [id])
   tipoSeguimiento TipoSeguimiento? @relation(fields: [tipoSeguimientoId], references: [id])
-  etapa           Etapa            @relation(fields: [etapaId], references: [id])
   vehiculo        Vehiculo?        @relation(fields: [vehiculoId], references: [id])
 
   @@map("negocio")

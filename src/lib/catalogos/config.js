@@ -32,10 +32,6 @@ export const CATALOGOS = {
     model: prisma.turno,
     fields: ['nombre'],
   },
-  etapa: {
-    model: prisma.etapa,
-    fields: ['nombre', 'orden', 'activo'],
-  },
   'tipo-seguimiento': {
     model: prisma.tipoSeguimiento,
     fields: ['nombre'],

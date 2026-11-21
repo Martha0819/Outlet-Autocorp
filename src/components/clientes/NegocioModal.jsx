@@ -26,7 +26,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
   const notify = useNotify();
 
   const { data: lineasNegocio = [] } = useGetCatalogoQuery('linea-negocio');
-  const { data: etapas = [] } = useGetCatalogoQuery('etapa');
 
   const { data: clientesData } = useGetClientesQuery();
   const clientes = React.useMemo(() => {
@@ -91,7 +90,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
 
   const [formData, setFormData] = useState({
     lineaNegocioId: '',
-    etapaId: '',
     vehiculoId: '',
     observaciones: '',
     totalUnidad: '',
@@ -106,23 +104,9 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
   useEffect(() => {
     if (!isOpen) return;
 
-    // Buscar etapa recomendada según el modo
-    let defaultEtapaId = etapas[0]?.id ? String(etapas[0].id) : '';
-    if (esVenta) {
-      const etapaVenta = etapas.find((e) => /venta|factura/i.test(e.nombre));
-      if (etapaVenta) defaultEtapaId = String(etapaVenta.id);
-    } else if (esEnganche) {
-      const etapaEnganche = etapas.find((e) => /apartado|enganche/i.test(e.nombre));
-      if (etapaEnganche) defaultEtapaId = String(etapaEnganche.id);
-    } else if (esSolicitud) {
-      const etapaSol = etapas.find((e) => /solicitud|prospecci/i.test(e.nombre));
-      if (etapaSol) defaultEtapaId = String(etapaSol.id);
-    }
-
     if (negocioExistente) {
       setFormData({
         lineaNegocioId: negocioExistente.lineaNegocioId ? String(negocioExistente.lineaNegocioId) : (lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : ''),
-        etapaId: negocioExistente.etapaId ? String(negocioExistente.etapaId) : defaultEtapaId,
         vehiculoId: negocioExistente.vehiculoId ? String(negocioExistente.vehiculoId) : '',
         observaciones: negocioExistente.observaciones || '',
         totalUnidad: negocioExistente.totalUnidad != null ? String(negocioExistente.totalUnidad) : '',
@@ -132,7 +116,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     } else {
       setFormData({
         lineaNegocioId: lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : '',
-        etapaId: defaultEtapaId,
         vehiculoId: '',
         observaciones: '',
         totalUnidad: '',
@@ -141,15 +124,15 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, modo, negocioExistente, lineasNegocio, etapas]);
+  }, [isOpen, modo, negocioExistente, lineasNegocio]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.lineaNegocioId || !formData.etapaId) {
-      notify('Selecciona línea de negocio y etapa.', 'error');
+    if (!formData.lineaNegocioId) {
+      notify('Selecciona la línea de negocio.', 'error');
       return;
     }
 
@@ -183,7 +166,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     // aparta o no el vehículo) — el backend deriva dioEnganche de él.
     const payload = {
       lineaNegocioId: Number(formData.lineaNegocioId),
-      etapaId: Number(formData.etapaId),
       vehiculoId: formData.vehiculoId ? Number(formData.vehiculoId) : null,
       folio: formData.folio?.trim() || null,
       observaciones: formData.observaciones,
@@ -336,42 +318,22 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
             )}
           </div>
 
-          <div className="form-row-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Línea de negocio *
-              </label>
-              {lineasNegocio.length === 0 ? (
-                <div style={{ padding: '8px 10px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, color: '#b45309' }}>
-                  Sin líneas de negocio.
-                </div>
-              ) : (
-                <select value={formData.lineaNegocioId} onChange={(e) => setFormData({ ...formData, lineaNegocioId: e.target.value })} required style={inputStyle}>
-                  <option value="">Seleccionar…</option>
-                  {lineasNegocio.map((l) => (
-                    <option key={l.id} value={l.id}>{l.nombre}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Etapa del proceso *
-              </label>
-              {etapas.length === 0 ? (
-                <div style={{ padding: '8px 10px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, color: '#b45309' }}>
-                  Sin etapas.
-                </div>
-              ) : (
-                <select value={formData.etapaId} onChange={(e) => setFormData({ ...formData, etapaId: e.target.value })} required style={inputStyle}>
-                  <option value="">Seleccionar…</option>
-                  {etapas.map((et) => (
-                    <option key={et.id} value={et.id}>{et.nombre}</option>
-                  ))}
-                </select>
-              )}
-            </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
+              Línea de negocio *
+            </label>
+            {lineasNegocio.length === 0 ? (
+              <div style={{ padding: '8px 10px', borderRadius: 8, background: '#fef3c7', border: '1px solid #fde68a', fontSize: 11, color: '#b45309' }}>
+                Sin líneas de negocio.
+              </div>
+            ) : (
+              <select value={formData.lineaNegocioId} onChange={(e) => setFormData({ ...formData, lineaNegocioId: e.target.value })} required style={inputStyle}>
+                <option value="">Seleccionar…</option>
+                {lineasNegocio.map((l) => (
+                  <option key={l.id} value={l.id}>{l.nombre}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Sección exclusiva de VENTA */}

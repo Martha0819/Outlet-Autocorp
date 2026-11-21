@@ -33,6 +33,14 @@ import {
 import { TestDriveModal } from '@/components/demos/TestDriveModal';
 import { NegocioModal } from '@/components/clientes/NegocioModal';
 import { ImportadorClientes } from '@/components/clientes/ImportadorClientes';
+import { etapaDeClientePorListas, ETIQUETA_ETAPA_CLIENTE } from '@/lib/clientes/etapaCliente';
+
+const ESTILO_ETAPA_CLIENTE = {
+  LEAD: { bg: '#f4f2f0', color: '#6e6764' },
+  DEMO: { bg: '#e0f2fe', color: '#0284c7' },
+  APARTADO: { bg: '#fef3c7', color: '#b45309' },
+  VENTA: { bg: '#dcfce7', color: '#16a34a' },
+};
 
 const inputStyle = {
   width: '100%',
@@ -469,6 +477,9 @@ export function ClientesView() {
                 filteredClients.map((client) => {
                   const clientDemos = allDemos.filter((d) => d.clienteId === client.id);
                   const demoCount = clientDemos.length;
+                  const clientNegociosFila = allNegocios.filter((n) => n.clienteId === client.id);
+                  const etapaCliente = etapaDeClientePorListas({ demos: clientDemos, negocios: clientNegociosFila });
+                  const estiloEtapa = ESTILO_ETAPA_CLIENTE[etapaCliente];
 
                   return (
                     <tr
@@ -500,6 +511,12 @@ export function ClientesView() {
                           <div>
                             <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', display: 'flex', alignItems: 'center', gap: 6 }}>
                               <span>{client.nombre}</span>
+                              <span
+                                title="Etapa calculada a partir de sus demos y negocios registrados"
+                                style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: estiloEtapa.bg, color: estiloEtapa.color }}
+                              >
+                                {ETIQUETA_ETAPA_CLIENTE[etapaCliente]}
+                              </span>
                               {Number(client.numeroAcompanantes) > 0 && (
                                 <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }} title={`${client.numeroAcompanantes} acompañante(s)`}>
                                   +{client.numeroAcompanantes} acomp.
@@ -946,6 +963,8 @@ export function ClientesView() {
       {active360Client && (() => {
         const currentClient = allClients.find((c) => c.id === active360Client.id) || active360Client;
         const clientDemos = allDemos.filter((d) => d.clienteId === currentClient.id);
+        const etapaClienteFicha = etapaDeClientePorListas({ demos: clientDemos, negocios: allNegocios.filter((n) => n.clienteId === currentClient.id) });
+        const estiloEtapaFicha = ESTILO_ETAPA_CLIENTE[etapaClienteFicha];
         const interestedVehicles = allVehicles.filter((v) => {
           if (currentClient.visitaMarcaEspecifica && currentClient.marcaId) {
             return v.marcaId === currentClient.marcaId;
@@ -1002,8 +1021,14 @@ export function ClientesView() {
                     {getInitials(currentClient.nombre)}
                   </span>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#251f1d' }}>
+                    <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: '#251f1d', display: 'flex', alignItems: 'center', gap: 8 }}>
                       {currentClient.nombre}
+                      <span
+                        title="Etapa calculada a partir de sus demos y negocios registrados"
+                        style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: estiloEtapaFicha.bg, color: estiloEtapaFicha.color }}
+                      >
+                        {ETIQUETA_ETAPA_CLIENTE[etapaClienteFicha]}
+                      </span>
                     </h3>
                     <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#8e8784' }}>
                       Cliente registrado el {formatDate(currentClient.createdAt || currentClient.fechaRegistro, 'long')}
@@ -1254,7 +1279,7 @@ export function ClientesView() {
                             clientNegocios.map((n) => (
                               <div key={n.id} style={{ fontSize: '11px', color: '#6e6764', borderLeft: '2px solid #ff8901', paddingLeft: '8px', marginBottom: 6 }}>
                                 <div style={{ fontWeight: 700, color: '#251f1d' }}>
-                                  {n.lineaNegocio?.nombre} · {n.etapa?.nombre}
+                                  {n.lineaNegocio?.nombre}
                                   {n.folio && (
                                     <span style={{ marginLeft: 6, background: '#fff5eb', color: '#ff8901', padding: '1px 6px', borderRadius: 4, fontWeight: 800, fontSize: '10px' }}>
                                       Folio: {n.folio}
