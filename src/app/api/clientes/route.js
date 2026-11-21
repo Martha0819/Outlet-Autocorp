@@ -10,8 +10,9 @@ export async function GET(request) {
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
 
+  const esInvitado = auth.usuario?.tipoUsuario?.nombre === 'Invitado' || auth.usuario?.esInvitado;
   const where = {
-    ...(esAdministrador(auth.usuario) ? {} : { unidadNegocioId: auth.usuario.unidadNegocioId }),
+    ...(esAdministrador(auth.usuario) || esInvitado ? {} : { unidadNegocioId: auth.usuario.unidadNegocioId }),
     ...(q
       ? {
           OR: [

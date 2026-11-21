@@ -29,7 +29,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }) {
   const navItems = [
     { label: 'General', href: '/', icon: <DashboardIcon size={18} />, visible: true },
     { label: 'Guardias y actividades', href: '/guardias', icon: <CalendarIcon size={18} />, visible: puede('guardia', 'leer') || puede('actividad', 'leer') },
-    { label: 'Clientes', href: '/clientes', icon: <UsersIcon size={18} />, visible: puede('cliente', 'leer') },
+    { label: 'Clientes', href: '/clientes', icon: <UsersIcon size={18} />, visible: !usuario?.esInvitado && puede('cliente', 'leer') },
     { label: 'Inventario', href: '/inventario', icon: <CarIcon size={18} />, visible: puede('vehiculo', 'leer') },
     { label: 'Catálogos', href: '/catalogos', icon: <LayersIcon size={18} />, visible: puede('catalogo', 'leer') },
     { label: 'Usuarios', href: '/usuarios', icon: <UserCogIcon size={18} />, visible: puede('usuario', 'leer') }
@@ -97,7 +97,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }) {
       </nav>
 
       <div className="sidebar-footer">
-        {usuario && (
+        {usuario && !(usuario.tipoUsuarioNombre === 'Invitado' || usuario.esInvitado) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px' }}>
             <span
               style={{

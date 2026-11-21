@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useLogin } from '@/store/features/auth/useLogin';
 
 export default function LoginPage() {
-  const { login, isLoading } = useLogin();
+  const { login, loginGuest, isLoading } = useLogin();
 
   // Estados del formulario
   const [email, setEmail] = useState('');
@@ -26,6 +26,14 @@ export default function LoginPage() {
     }
 
     const result = await login({ email: email.trim(), password });
+    if (!result.ok) {
+      setErrorMsg(result.message);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setErrorMsg('');
+    const result = await loginGuest();
     if (!result.ok) {
       setErrorMsg(result.message);
     }
@@ -125,7 +133,7 @@ export default function LoginPage() {
             style={{
               fontSize: '34px',
               fontWeight: 900,
-              margin: '0 0 10px 0',
+              margin: '0',
               letterSpacing: '-0.3px',
               lineHeight: 1.15,
               textShadow: '0 2px 8px rgba(0,0,0,0.18)'
@@ -133,20 +141,6 @@ export default function LoginPage() {
           >
             ¡Hola, Bienvenido!
           </h2>
-
-          <p
-            style={{
-              fontSize: '13px',
-              opacity: 0.95,
-              margin: 0,
-              fontWeight: 600,
-              maxWidth: '260px',
-              lineHeight: 1.5,
-              textShadow: '0 1px 4px rgba(0,0,0,0.15)'
-            }}
-          >
-            Sistema Comercial y Plataforma de Gestión de Seminuevos
-          </p>
         </div>
 
         {/* =======================================================================
@@ -315,6 +309,42 @@ export default function LoginPage() {
               }}
             >
               {isLoading ? 'Accediendo...' : 'Iniciar Sesión'}
+            </button>
+
+            {/* Separador */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '14px 0 8px' }}>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+              <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>O</span>
+              <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }} />
+            </div>
+
+            {/* Botón Acceder como Invitado */}
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                backgroundColor: '#f8fafc',
+                color: '#1e293b',
+                border: '1.5px solid #cbd5e1',
+                padding: '11px 16px',
+                borderRadius: '12px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.15s'
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <span>Entrar como invitado</span>
             </button>
           </form>
         </div>

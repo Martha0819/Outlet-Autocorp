@@ -44,7 +44,7 @@ function toTimeStr(val) {
 export function DashboardView() {
   const router = useRouter();
   const notify = useNotify();
-  const { puede } = usePermiso();
+  const { puede, esInvitado } = usePermiso();
 
   const [period, setPeriod] = useState('month'); // 'today', 'week', 'month', 'custom'
   const [customStart, setCustomStart] = useState('');
@@ -291,33 +291,36 @@ export function DashboardView() {
           )}
         </div>
 
-        <div className="quick-actions-group">
-          <button className="btn btn-primary" onClick={handleOpenGuestModal}>
-            <PlusIcon size={14} /> <span>Registrar invitado</span>
-          </button>
-          <button className="btn btn-outline" onClick={() => setActiveModal('testdrive')}>
-            <TestDriveIcon size={14} /> <span>Prueba Demo</span>
-          </button>
-          <button className="btn btn-outline" onClick={() => setActiveModal('request')}>
-            <FileTextIcon size={14} /> <span>Solicitud de crédito</span>
-          </button>
-          <button className="btn btn-dark" onClick={() => setActiveModal('sale')}>
-            <DollarIcon size={14} /> <span>Registrar venta</span>
-          </button>
-        </div>
+        {!esInvitado && (
+          <div className="quick-actions-group">
+            <button className="btn btn-primary" onClick={handleOpenGuestModal}>
+              <PlusIcon size={14} /> <span>Registrar invitado</span>
+            </button>
+            <button className="btn btn-outline" onClick={() => setActiveModal('testdrive')}>
+              <TestDriveIcon size={14} /> <span>Prueba Demo</span>
+            </button>
+            <button className="btn btn-outline" onClick={() => setActiveModal('request')}>
+              <FileTextIcon size={14} /> <span>Solicitud de crédito</span>
+            </button>
+            <button className="btn btn-dark" onClick={() => setActiveModal('sale')}>
+              <DollarIcon size={14} /> <span>Registrar venta</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ====================================================================
-          2. REJILLA DE 6 KPIS HORIZONTALES (DATOS 100% REALES DE BD)
+          2. REJILLA DE KPIS (EN MODO INVITADO SE OMITEN ENGANCHE Y VENTAS)
           ==================================================================== */}
       <div className="kpi-grid">
         {/* KPI 1: Invitados */}
         <div
           className="kpi-card card"
-          onClick={() => router.push('/clientes')}
+          onClick={() => { if (!esInvitado) router.push('/clientes'); }}
           tabIndex={0}
           role="button"
           aria-label="Ver detalle de Invitados"
+          style={{ cursor: esInvitado ? 'default' : 'pointer' }}
         >
           <div className="kpi-top">
             <div className="kpi-icon-wrapper color-orange">
@@ -367,10 +370,11 @@ export function DashboardView() {
         {/* KPI 3: Pruebas de manejo */}
         <div
           className="kpi-card card"
-          onClick={() => router.push('/clientes')}
+          onClick={() => { if (!esInvitado) router.push('/clientes'); }}
           tabIndex={0}
           role="button"
           aria-label="Ver detalle de Pruebas de manejo"
+          style={{ cursor: esInvitado ? 'default' : 'pointer' }}
         >
           <div className="kpi-top">
             <div className="kpi-icon-wrapper color-blue">
@@ -393,7 +397,7 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* KPI 4: Guardias programadas (¡REFLEJA LA GUARDIA REAL DE LA BD!) */}
+        {/* KPI 4: Guardias programadas */}
         <div
           className="kpi-card card"
           onClick={() => router.push('/guardias')}
@@ -420,57 +424,62 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* KPI 5: Enganche */}
-        <div
-          className="kpi-card card"
-          onClick={() => router.push('/inventario')}
-          tabIndex={0}
-          role="button"
-          aria-label="Ver detalle de Enganches"
-        >
-          <div className="kpi-top">
-            <div className="kpi-icon-wrapper color-green">
-              <DollarIcon size={20} />
+        {!esInvitado && (
+          <>
+            {/* KPI 5: Enganche */}
+            <div
+              className="kpi-card card"
+              onClick={() => router.push('/inventario')}
+              tabIndex={0}
+              role="button"
+              aria-label="Ver detalle de Enganches"
+            >
+              <div className="kpi-top">
+                <div className="kpi-icon-wrapper color-green">
+                  <DollarIcon size={20} />
+                </div>
+                <span className="kpi-compare neutral">0 vs ant.</span>
+              </div>
+              <div className="kpi-body">
+                <span className="kpi-label">Enganche</span>
+                <h2 className="kpi-value">{formatCurrency(engancheAmount)}</h2>
+                <span className="kpi-subtext">
+                  {reservedVehicles.length} enganches recibidos en caja
+                </span>
+              </div>
             </div>
-            <span className="kpi-compare neutral">0 vs ant.</span>
-          </div>
-          <div className="kpi-body">
-            <span className="kpi-label">Enganche</span>
-            <h2 className="kpi-value">{formatCurrency(engancheAmount)}</h2>
-            <span className="kpi-subtext">
-              {reservedVehicles.length} enganches recibidos en caja
-            </span>
-          </div>
-        </div>
 
-        {/* KPI 6: Ventas */}
-        <div
-          className="kpi-card card"
-          onClick={() => router.push('/inventario')}
-          tabIndex={0}
-          role="button"
-          aria-label="Ver detalle de Ventas"
-        >
-          <div className="kpi-top">
-            <div className="kpi-icon-wrapper color-orange-dark">
-              <TagIcon size={20} />
+            {/* KPI 6: Ventas */}
+            <div
+              className="kpi-card card"
+              onClick={() => router.push('/inventario')}
+              tabIndex={0}
+              role="button"
+              aria-label="Ver detalle de Ventas"
+            >
+              <div className="kpi-top">
+                <div className="kpi-icon-wrapper color-orange-dark">
+                  <TagIcon size={20} />
+                </div>
+                <span className="kpi-compare neutral">0 vs ant.</span>
+              </div>
+              <div className="kpi-body">
+                <span className="kpi-label">Ventas</span>
+                <h2 className="kpi-value">{formatCurrency(soldAmount)}</h2>
+                <span className="kpi-subtext">
+                  {soldVehicles.length} vehículos vendidos en el periodo
+                </span>
+              </div>
             </div>
-            <span className="kpi-compare neutral">0 vs ant.</span>
-          </div>
-          <div className="kpi-body">
-            <span className="kpi-label">Ventas</span>
-            <h2 className="kpi-value">{formatCurrency(soldAmount)}</h2>
-            <span className="kpi-subtext">
-              {soldVehicles.length} vehículos vendidos en el periodo
-            </span>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* ====================================================================
           3. SECCIÓN DE GRÁFICAS: FACTURACIÓN Y SEGUIMIENTO COMERCIAL
           ==================================================================== */}
-      <div className="dashboard-charts-grid">
+      {!esInvitado && (
+        <div className="dashboard-charts-grid">
         {/* Gráfica de Ventas por Periodo */}
         <div className="card chart-card">
           <div className="card-header">
@@ -673,6 +682,7 @@ export function DashboardView() {
           </div>
         </div>
       </div>
+      )}
 
       {/* ====================================================================
           4. GUARDIAS PROGRAMADAS Y ACTIVIDADES / PRUEBAS DE MANEJO
@@ -713,12 +723,14 @@ export function DashboardView() {
                 <div style={{ padding: '32px 20px', textAlign: 'center', color: '#8e8784' }}>
                   <div style={{ fontSize: 22, marginBottom: 4 }}>📅</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#251f1d' }}>Sin guardias programadas</div>
-                  <button
-                    onClick={() => router.push('/guardias')}
-                    style={{ marginTop: 8, background: '#ff8901', color: '#251f1d', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
-                  >
-                    + Programar guardia
-                  </button>
+                  {!esInvitado && (
+                    <button
+                      onClick={() => router.push('/guardias')}
+                      style={{ marginTop: 8, background: '#ff8901', color: '#251f1d', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      + Programar guardia
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -732,9 +744,11 @@ export function DashboardView() {
               <h3 className="card-title" style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Pruebas de Manejo Próximas</h3>
               <p className="card-subtitle" style={{ fontSize: 11, color: '#8e8784', margin: '2px 0 0 0' }}>Citas agendadas para evaluación</p>
             </div>
-            <button className="btn-link" onClick={() => router.push('/clientes')} style={{ background: 'none', border: 'none', color: '#ff8901', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-              Ver todas →
-            </button>
+            {!esInvitado && (
+              <button className="btn-link" onClick={() => router.push('/clientes')} style={{ background: 'none', border: 'none', color: '#ff8901', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                Ver todas →
+              </button>
+            )}
           </div>
           <div className="card-body p-0">
             <div className="upcoming-list">
@@ -763,12 +777,14 @@ export function DashboardView() {
                   <div style={{ fontSize: 22, marginBottom: 4 }}>🚗</div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#251f1d' }}>Aún no hay pruebas agendadas</div>
                   <p style={{ fontSize: 11, margin: '2px 0 8px 0' }}>Cero citas registradas en el sistema.</p>
-                  <button
-                    onClick={handleOpenTestDriveModal}
-                    style={{ background: '#ff8901', color: '#251f1d', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
-                  >
-                    + Programar prueba
-                  </button>
+                  {!esInvitado && (
+                    <button
+                      onClick={handleOpenTestDriveModal}
+                      style={{ background: '#ff8901', color: '#251f1d', border: 'none', padding: '5px 12px', borderRadius: 6, fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+                    >
+                      + Programar prueba
+                    </button>
+                  )}
                 </div>
               )}
             </div>

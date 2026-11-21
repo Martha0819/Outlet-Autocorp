@@ -13,10 +13,12 @@ export async function GET(request) {
   const servicioId = url.searchParams.get('servicioId');
   const q = url.searchParams.get('q');
 
+  const esInvitado = auth.usuario?.tipoUsuario?.nombre === 'Invitado' || auth.usuario?.esInvitado;
+
   // Los filtros van al WHERE (no al cliente): con paginación, filtrar solo
   // la página ya traída daría resultados incompletos/engañosos.
   const where = {
-    ...(esAdministrador(auth.usuario) ? {} : { unidadNegocioId: auth.usuario.unidadNegocioId }),
+    ...(esAdministrador(auth.usuario) || esInvitado ? {} : { unidadNegocioId: auth.usuario.unidadNegocioId }),
     ...(estatus && estatus !== 'all' ? { estatus } : {}),
     ...(marcaId && marcaId !== 'all' ? { marcaId: Number(marcaId) } : {}),
     ...(servicioId && servicioId !== 'all' ? { servicioId: Number(servicioId) } : {}),
@@ -32,26 +34,37 @@ export async function GET(request) {
   };
   const pagination = parsePagination(request);
 
+  const sanitizarVehiculo = (v) => {
+    if (!esInvitado) return v;
+    return {
+      ...v,
+      precioSinIva: null,
+      precioLista: null,
+      precioRemate: null,
+      bono: null,
+    };
+  };
+
   if (!pagination) {
     const vehiculos = await prisma.vehiculo.findMany({
       where,
-      include: { marca: true, unidadNegocio: true, servicio: true },
+      include: { marca: true, unidadNegocio: true },
       orderBy: { id: 'desc' },
     });
-    return Response.json(vehiculos);
+    return Response.json(esInvitado ? vehiculos.map(sanitizarVehiculo) : vehiculos);
   }
 
   const [vehiculos, total] = await Promise.all([
     prisma.vehiculo.findMany({
       where,
-      include: { marca: true, unidadNegocio: true, servicio: true },
+      include: { marca: true, unidadNegocio: true },
       orderBy: { id: 'desc' },
       skip: pagination.skip,
       take: pagination.take,
     }),
     prisma.vehiculo.count({ where }),
   ]);
-  return Response.json(buildPaginatedResponse(vehiculos, total, pagination));
+  return Response.json(buildPaginatedResponse(esInvitado ? vehiculos.map(sanitizarVehiculo) : vehiculos, total, pagination));
 }
 
 export async function POST(request) {
@@ -93,7 +106,7 @@ export async function POST(request) {
         bono: bono ? Number(bono) : null,
         diasInventario: diasInventario !== undefined && diasInventario !== '' ? Number(diasInventario) : null,
       },
-      include: { marca: true, unidadNegocio: true, servicio: true },
+      include: { marca: true, unidadNegocio: true },
     });
     await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'vehiculo', recursoId: vehiculo.id, detalle: `${vehiculo.nombre} ${vehiculo.modelo}` });
     return Response.json(vehiculo, { status: 201 });

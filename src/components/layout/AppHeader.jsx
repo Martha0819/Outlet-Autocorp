@@ -66,69 +66,94 @@ export function AppHeader({ onToggleMobileMenu }) {
 
         {/* Perfil del Asesor / Usuario activo */}
         {usuario ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', borderLeft: '1px solid #eae7e5' }}>
-            <span
-              style={{
-                width: '34px',
-                height: '34px',
-                borderRadius: '50%',
-                backgroundColor: '#ff8901',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-              }}
-            >
-              {getInitials(usuario.nombre)}
-            </span>
-            <div className="header-user-text" style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
-                {usuario.nombre}
-              </span>
-              <span style={{ fontSize: '10px', color: '#8e8784', fontWeight: 600 }}>
-                {usuario.tipoUsuarioNombre}
-              </span>
+          (usuario.tipoUsuarioNombre === 'Invitado' || usuario.esInvitado) ? (
+            <div style={{ display: 'flex', alignItems: 'center', paddingLeft: '8px', borderLeft: '1px solid #eae7e5' }}>
+              <button
+                onClick={handleLogout}
+                title="Iniciar sesión"
+                style={{
+                  background: '#ff8901',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 16px',
+                  cursor: 'pointer',
+                  color: '#251f1d',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(255,137,1,0.25)',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <span>Iniciar Sesión</span>
+              </button>
             </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', borderLeft: '1px solid #eae7e5' }}>
+              <span
+                style={{
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ff8901',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                }}
+              >
+                {getInitials(usuario.nombre)}
+              </span>
+              <div className="header-user-text" style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', lineHeight: 1.2 }}>
+                  {usuario.nombre}
+                </span>
+                <span style={{ fontSize: '10px', color: '#8e8784', fontWeight: 700 }}>
+                  {usuario.tipoUsuarioNombre}
+                </span>
+              </div>
 
-            {/* Botón Salir / Logout */}
-            <button
-              onClick={handleLogout}
-              title="Cerrar sesión"
-              style={{
-                background: 'none',
-                border: '1px solid #e0dbd9',
-                borderRadius: '6px',
-                padding: '5px 8px',
-                cursor: 'pointer',
-                color: '#6e6764',
-                fontSize: '11px',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#ff8901';
-                e.currentTarget.style.color = '#ff8901';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e0dbd9';
-                e.currentTarget.style.color = '#6e6764';
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                <polyline points="16 17 21 12 16 7"></polyline>
-                <line x1="21" y1="12" x2="9" y2="12"></line>
-              </svg>
-              <span>Salir</span>
-            </button>
-          </div>
+              <button
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                style={{
+                  background: 'none',
+                  border: '1px solid #e0dbd9',
+                  borderRadius: '6px',
+                  padding: '5px 8px',
+                  cursor: 'pointer',
+                  color: '#6e6764',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#ff8901';
+                  e.currentTarget.style.color = '#ff8901';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e0dbd9';
+                  e.currentTarget.style.color = '#6e6764';
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                  <polyline points="16 17 21 12 16 7"></polyline>
+                  <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Salir</span>
+              </button>
+            </div>
+          )
         ) : (
           <Link
             href="/login"

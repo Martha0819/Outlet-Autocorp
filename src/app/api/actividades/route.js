@@ -8,9 +8,10 @@ export async function GET(request) {
   const auth = await requirePermiso('actividad', 'leer');
   if (auth.error) return auth.error;
 
+  const esInvitado = auth.usuario?.tipoUsuario?.nombre === 'Invitado' || auth.usuario?.esInvitado;
   // unidadNegocioId NULL = actividad de todo el evento, visible para
   // cualquiera; si no es null, solo para esa unidad (o Administrador).
-  const where = esAdministrador(auth.usuario)
+  const where = (esAdministrador(auth.usuario) || esInvitado)
     ? {}
     : { OR: [{ unidadNegocioId: auth.usuario.unidadNegocioId }, { unidadNegocioId: null }] };
   const pagination = parsePagination(request);

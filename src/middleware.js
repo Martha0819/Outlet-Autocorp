@@ -25,7 +25,8 @@ export async function middleware(request) {
   const accessToken = request.cookies.get('access_token')?.value;
 
   if (!accessToken) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Si no ha iniciado sesión, entra directamente como invitado
+    return NextResponse.redirect(new URL(`/api/auth/guest?redirect=${encodeURIComponent(pathname)}`, request.url));
   }
 
   try {
@@ -33,7 +34,8 @@ export async function middleware(request) {
     await jwtVerify(accessToken, secret);
     return NextResponse.next();
   } catch {
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Si el token es inválido o expiró, entra directamente como invitado
+    return NextResponse.redirect(new URL(`/api/auth/guest?redirect=${encodeURIComponent(pathname)}`, request.url));
   }
 }
 

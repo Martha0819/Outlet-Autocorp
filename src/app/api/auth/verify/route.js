@@ -31,6 +31,7 @@ export async function GET() {
   }
 
   const esAdministrador = usuario.tipoUsuario.nombre === ADMIN_TIPO_USUARIO_NOMBRE;
+  const esInvitado = usuario.tipoUsuario.nombre === 'Invitado';
 
   return Response.json({
     authenticated: true,
@@ -42,6 +43,7 @@ export async function GET() {
       tipoUsuarioNombre: usuario.tipoUsuario.nombre,
       unidadNegocioId: usuario.unidadNegocioId,
       esAdministrador,
+      esInvitado,
       permisos: esAdministrador ? [] : await getPermisosDeRol(usuario.tipoUsuarioId),
     },
   });

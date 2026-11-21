@@ -5,8 +5,7 @@ import { AppLayoutWrapper } from '@/components/layout/AppLayoutWrapper';
 import { ToastContainer } from '@/components/ui/Toast';
 
 export const metadata = {
-  title: 'Outlet Autocorp — Mini CRM para Outlet de Autos',
-  description: 'Sistema integral de gestión comercial, inventario, guardias y clientes para outlet de autos.'
+  title: 'Outlet Farrera',
 };
 
 export default function RootLayout({ children }) {

@@ -11,5 +11,7 @@ export function usePermiso() {
     return (usuario.permisos || []).includes(`${recurso}.${accion}`);
   };
 
-  return { puede, esAdministrador: Boolean(usuario?.esAdministrador) };
+  const esInvitado = usuario?.tipoUsuarioNombre === 'Invitado' || Boolean(usuario?.esInvitado);
+
+  return { puede, esAdministrador: Boolean(usuario?.esAdministrador), esInvitado };
 }

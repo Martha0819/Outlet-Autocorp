@@ -8,9 +8,10 @@ export async function GET(request) {
   const auth = await requirePermiso('guardia', 'leer');
   if (auth.error) return auth.error;
 
+  const esInvitado = auth.usuario?.tipoUsuario?.nombre === 'Invitado' || auth.usuario?.esInvitado;
   // Guardia no tiene su propia unidadNegocioId: se infiere de a qué unidad
   // pertenece el usuario asignado, o es visible para todos si es libre.
-  const where = esAdministrador(auth.usuario)
+  const where = (esAdministrador(auth.usuario) || esInvitado)
     ? {}
     : {
         OR: [

@@ -74,7 +74,7 @@ function useDebouncedValue(value, delayMs = 350) {
 
 export function InventarioView() {
   const notify = useNotify();
-  const { puede, esAdministrador } = usePermiso();
+  const { puede, esAdministrador, esInvitado } = usePermiso();
   const usuarioActual = useAppSelector((state) => state.auth.usuario);
   const puedeCrear = puede('vehiculo', 'crear');
   const puedeEditar = puede('vehiculo', 'editar');
@@ -271,8 +271,8 @@ export function InventarioView() {
 
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={selectPillStyle}>
             <option value="recent">Más reciente</option>
-            <option value="price_asc">Precio: Menor a Mayor</option>
-            <option value="price_desc">Precio: Mayor a Menor</option>
+            {!esInvitado && <option value="price_asc">Precio: Menor a Mayor</option>}
+            {!esInvitado && <option value="price_desc">Precio: Mayor a Menor</option>}
             <option value="year_desc">Año: Más reciente</option>
           </select>
         </div>
@@ -339,7 +339,7 @@ export function InventarioView() {
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>AÑO & KM</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>DÍAS EN INVENTARIO</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>TRANSMISIÓN</th>
-                <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>PRECIO</th>
+                <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>{esInvitado ? 'PRECIO (RESERVADO)' : 'PRECIO'}</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>UNIDAD DE NEGOCIO</th>
                 <th style={{ padding: '16px 20px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px' }}>ESTATUS</th>
                 <th style={{ padding: '16px 28px', color: '#ffffff', fontSize: 11, fontWeight: 800, letterSpacing: '0.8px', textAlign: 'right' }}>ACCIONES</th>
@@ -439,13 +439,19 @@ export function InventarioView() {
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.transmision || '—'}</td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 14, fontWeight: 800, color: '#251f1d' }}>
-                        {v.precioLista ? formatCurrency(Number(v.precioLista)) : '—'}
-                        {(v.precioRemate || v.bono) && (
-                          <div style={{ fontSize: 11, fontWeight: 600, color: '#8e8784', marginTop: 2 }}>
-                            {v.precioRemate ? `Remate: ${formatCurrency(Number(v.precioRemate))}` : ''}
-                            {v.precioRemate && v.bono ? ' · ' : ''}
-                            {v.bono ? `Bono: ${formatCurrency(Number(v.bono))}` : ''}
-                          </div>
+                        {esInvitado ? (
+                          <span style={{ color: '#8e8784', fontStyle: 'italic', fontWeight: 500, fontSize: 12 }}>Reservado</span>
+                        ) : (
+                          <>
+                            {v.precioLista ? formatCurrency(Number(v.precioLista)) : '—'}
+                            {(v.precioRemate || v.bono) && (
+                              <div style={{ fontSize: 11, fontWeight: 600, color: '#8e8784', marginTop: 2 }}>
+                                {v.precioRemate ? `Remate: ${formatCurrency(Number(v.precioRemate))}` : ''}
+                                {v.precioRemate && v.bono ? ' · ' : ''}
+                                {v.bono ? `Bono: ${formatCurrency(Number(v.bono))}` : ''}
+                              </div>
+                            )}
+                          </>
                         )}
                       </td>
                       <td style={{ padding: '20px 20px', verticalAlign: 'middle', fontSize: 13, color: '#251f1d' }}>{v.unidadNegocio?.nombre}</td>

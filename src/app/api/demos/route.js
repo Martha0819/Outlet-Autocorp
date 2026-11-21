@@ -8,9 +8,10 @@ export async function GET(request) {
   const auth = await requirePermiso('demo', 'leer');
   if (auth.error) return auth.error;
 
+  const esInvitado = auth.usuario?.tipoUsuario?.nombre === 'Invitado' || auth.usuario?.esInvitado;
   // Demo no tiene su propia unidadNegocioId: se infiere del vehículo usado
   // (el dealer donde físicamente ocurrió la prueba de manejo).
-  const where = esAdministrador(auth.usuario) ? {} : { vehiculo: { unidadNegocioId: auth.usuario.unidadNegocioId } };
+  const where = (esAdministrador(auth.usuario) || esInvitado) ? {} : { vehiculo: { unidadNegocioId: auth.usuario.unidadNegocioId } };
   const include = {
     cliente: true,
     vehiculo: { include: { marca: true } },

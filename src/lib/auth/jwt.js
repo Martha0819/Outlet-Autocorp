@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { getAuthConfig } from './config';
+import { getAuthConfig } from './config.js';
 
 export async function signAccessToken(usuario) {
   const { accessTokenSecret, accessTokenTtlSeconds } = getAuthConfig();
