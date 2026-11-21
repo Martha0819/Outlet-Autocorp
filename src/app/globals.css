@@ -2357,7 +2357,7 @@ button, input, select, textarea {
 
 
 /* ==========================================================================
-   TABLA INTELIGENTE DE INVENTARIO (DISEÑO 2 - IMAGEN 4)
+   TABLA INTELIGENTE DE INVENTARIO (DISEï¿½O 2 - IMAGEN 4)
    ========================================================================== */
 .card-table-wrapper {
   background: #ffffff;
@@ -2438,7 +2438,7 @@ button, input, select, textarea {
 /* Rejilla de 6 KPIs en Fila Horizontal (Imagen 1) */
 .kpi-grid {
   display: grid !important;
-  grid-template-columns: repeat(6, 1fr) !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
   gap: 16px !important;
   margin-bottom: 24px !important;
 }

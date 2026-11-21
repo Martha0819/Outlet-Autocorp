@@ -131,6 +131,9 @@ export function DashboardView() {
   // ya no hace falta adivinar con dioEnganche/totalUnidad.
   const negociosConEnganche = useMemo(() => negocios.filter((n) => n.tipo === 'APARTADO'), [negocios]);
   const engancheAmount = negociosConEnganche.reduce((acc, n) => acc + Number(n.enganche || 0), 0);
+  const apartadosCount = useMemo(() => {
+    return Math.max(negociosConEnganche.length, reservedVehicles.length);
+  }, [negociosConEnganche.length, reservedVehicles.length]);
   const negociosVendidos = useMemo(() => negocios.filter((n) => n.tipo === 'VENTA'), [negocios]);
 
   // Embudo de conversión real
@@ -411,36 +414,9 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* KPI 4: Guardias programadas */}
-        <div
-          className="kpi-card card"
-          onClick={() => router.push('/guardias')}
-          tabIndex={0}
-          role="button"
-          aria-label="Ver detalle de Guardias"
-        >
-          <div className="kpi-top">
-            <div className="kpi-icon-wrapper color-green" style={{ background: '#e0f2fe', color: '#0284c7' }}>
-              <CalendarIcon size={20} />
-            </div>
-            {guardiasCount > 0 ? (
-              <span className="kpi-compare positive">
-                <TrendingUpIcon size={12} /> {guardiasCount} activa
-              </span>
-            ) : (
-              <span className="kpi-compare neutral">0 vs ant.</span>
-            )}
-          </div>
-          <div className="kpi-body">
-            <span className="kpi-label">Guardias</span>
-            <h2 className="kpi-value">{guardiasCount}</h2>
-            <span className="kpi-subtext">{guardiasCount} guardias programadas</span>
-          </div>
-        </div>
-
         {!esInvitado && (
           <>
-            {/* KPI 5: Enganche */}
+            {/* KPI: Apartados */}
             <div
               className="kpi-card card"
               onClick={() => setActiveModal('enganches')}
@@ -450,20 +426,26 @@ export function DashboardView() {
             >
               <div className="kpi-top">
                 <div className="kpi-icon-wrapper color-green">
-                  <DollarIcon size={20} />
+                  <FileTextIcon size={20} />
                 </div>
-                <span className="kpi-compare neutral">0 vs ant.</span>
+                {apartadosCount > 0 ? (
+                  <span className="kpi-compare positive">
+                    <TrendingUpIcon size={12} /> {apartadosCount} activo{apartadosCount > 1 ? 's' : ''}
+                  </span>
+                ) : (
+                  <span className="kpi-compare neutral">0 vs ant.</span>
+                )}
               </div>
               <div className="kpi-body">
-                <span className="kpi-label">Enganche</span>
-                <h2 className="kpi-value">{formatCurrency(engancheAmount)}</h2>
+                <span className="kpi-label">Apartados</span>
+                <h2 className="kpi-value">{apartadosCount}</h2>
                 <span className="kpi-subtext">
-                  {negociosConEnganche.length} enganches recibidos en caja
+                  {apartadosCount === 1 ? '1 vehículo apartado' : `${apartadosCount} vehículos apartados`}
                 </span>
               </div>
             </div>
 
-            {/* KPI 6: Ventas */}
+            {/* KPI: Ventas */}
             <div
               className="kpi-card card"
               onClick={() => setActiveModal('ventas')}
@@ -1063,8 +1045,8 @@ export function DashboardView() {
               </button>
             </div>
 
-            {negociosConEnganche.length === 0 ? (
-              <p style={{ fontSize: 13, color: '#8e8784', margin: 0 }}>No hay vehículos apartados con enganche en este momento.</p>
+            {apartadosCount === 0 ? (
+              <p style={{ fontSize: 13, color: '#8e8784', margin: 0 }}>No hay vehículos apartados en este momento.</p>
             ) : (
               <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {negociosConEnganche.map((n) => (
@@ -1094,7 +1076,7 @@ export function DashboardView() {
                       </div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', whiteSpace: 'nowrap' }}>
-                      {formatCurrency(Number(n.enganche || 0))}
+                      {Number(n.enganche || 0) > 0 ? formatCurrency(Number(n.enganche)) : 'Apartado'}
                     </div>
                   </div>
                 ))}
