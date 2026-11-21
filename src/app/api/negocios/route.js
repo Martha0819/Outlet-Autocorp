@@ -65,23 +65,31 @@ export async function POST(request) {
     }
   }
 
-  const negocio = await prisma.negocio.create({
-    data: {
-      clienteId: Number(clienteId),
-      usuarioId: auth.usuario.id,
-      unidadNegocioId: auth.usuario.unidadNegocioId,
-      lineaNegocioId: Number(lineaNegocioId),
-      etapaId: Number(etapaId),
-      tipoSeguimientoId: tipoSeguimientoId ? Number(tipoSeguimientoId) : null,
-      vehiculoId: vehiculoId ? Number(vehiculoId) : null,
-      dioEnganche: Boolean(dioEnganche),
-      enganche: dioEnganche ? enganche : null,
-      totalUnidad: totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '' ? totalUnidad : null,
-      folio: folio?.trim() ? folio.trim() : null,
-      observaciones: observaciones?.trim() ? observaciones.trim() : null,
-    },
-    include: INCLUDE_NEGOCIO,
-  });
+  let negocio;
+  try {
+    negocio = await prisma.negocio.create({
+      data: {
+        clienteId: Number(clienteId),
+        usuarioId: auth.usuario.id,
+        unidadNegocioId: auth.usuario.unidadNegocioId,
+        lineaNegocioId: Number(lineaNegocioId),
+        etapaId: Number(etapaId),
+        tipoSeguimientoId: tipoSeguimientoId ? Number(tipoSeguimientoId) : null,
+        vehiculoId: vehiculoId ? Number(vehiculoId) : null,
+        dioEnganche: Boolean(dioEnganche),
+        enganche: dioEnganche ? enganche : null,
+        totalUnidad: totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '' ? totalUnidad : null,
+        folio: folio?.trim() ? folio.trim() : null,
+        observaciones: observaciones?.trim() ? observaciones.trim() : null,
+      },
+      include: INCLUDE_NEGOCIO,
+    });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'El cliente, línea de negocio, etapa, seguimiento o vehículo indicado no existe' }, { status: 400 });
+    }
+    throw error;
+  }
 
   if (vehiculoId) {
     if (totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '') {

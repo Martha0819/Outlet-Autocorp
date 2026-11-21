@@ -26,13 +26,20 @@ export async function PATCH(request, { params }) {
   if (body.fecha !== undefined) data.fecha = new Date(body.fecha);
   if (body.observaciones !== undefined) data.observaciones = body.observaciones?.trim() ? body.observaciones.trim() : null;
 
-  const demo = await prisma.demo.update({
-    where: { id: Number(params.id) },
-    data,
-    include: { cliente: true, vehiculo: { include: { marca: true } }, usuario: { select: USUARIO_PUBLIC_SELECT } },
-  });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'editar', recurso: 'demo', recursoId: demo.id });
-  return Response.json(demo);
+  try {
+    const demo = await prisma.demo.update({
+      where: { id: Number(params.id) },
+      data,
+      include: { cliente: true, vehiculo: { include: { marca: true } }, usuario: { select: USUARIO_PUBLIC_SELECT } },
+    });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'editar', recurso: 'demo', recursoId: demo.id });
+    return Response.json(demo);
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return Response.json({ error: 'No encontrado' }, { status: 404 });
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(_request, { params }) {
@@ -47,7 +54,14 @@ export async function DELETE(_request, { params }) {
     return Response.json({ error: 'No puedes eliminar demos de otra unidad de negocio' }, { status: 403 });
   }
 
-  await prisma.demo.delete({ where: { id: Number(params.id) } });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'eliminar', recurso: 'demo', recursoId: Number(params.id) });
-  return Response.json({ ok: true });
+  try {
+    await prisma.demo.delete({ where: { id: Number(params.id) } });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'eliminar', recurso: 'demo', recursoId: Number(params.id) });
+    return Response.json({ ok: true });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return Response.json({ error: 'No encontrado' }, { status: 404 });
+    }
+    throw error;
+  }
 }

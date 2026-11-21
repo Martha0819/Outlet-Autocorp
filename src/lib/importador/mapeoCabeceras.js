@@ -18,14 +18,21 @@ const SINONIMOS_POR_CAMPO = {
   diasInventario: ['dias en inventario', 'diasinventario', 'dias de inventario', 'dias inventario'],
 };
 
-function campoParaCabecera(cabecera) {
+function campoParaCabecera(cabecera, sinonimosPorCampo) {
   const normalizada = normalizarTexto(cabecera);
-  for (const [campo, sinonimos] of Object.entries(SINONIMOS_POR_CAMPO)) {
+  for (const [campo, sinonimos] of Object.entries(sinonimosPorCampo)) {
     if (sinonimos.some((s) => normalizarTexto(s) === normalizada)) return campo;
   }
   return null;
 }
 
-export function sugerirMapeo(cabeceras) {
-  return cabeceras.map((columna) => ({ columna, campo: campoParaCabecera(columna) }));
+// Cada importador (vehículos, clientes...) tiene su propio diccionario de
+// sinónimos, pero la lógica de reconocer una cabecera es la misma — se
+// comparte vía esta fábrica en vez de reescribirla por importador.
+export function crearSugeridorMapeo(sinonimosPorCampo) {
+  return function sugerirMapeo(cabeceras) {
+    return cabeceras.map((columna) => ({ columna, campo: campoParaCabecera(columna, sinonimosPorCampo) }));
+  };
 }
+
+export const sugerirMapeo = crearSugeridorMapeo(SINONIMOS_POR_CAMPO);

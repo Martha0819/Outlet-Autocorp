@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 
 export async function limpiarBaseDePrueba() {
   await prisma.bitacora.deleteMany();
+  await prisma.cliente.deleteMany();
   await prisma.vehiculo.deleteMany();
   await prisma.usuario.deleteMany();
   await prisma.tipoUsuarioPermiso.deleteMany();

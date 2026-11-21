@@ -62,6 +62,9 @@ export async function PATCH(request, { params }) {
     if (error.code === 'P2002') {
       return Response.json({ error: 'Ya existe un usuario con ese email' }, { status: 409 });
     }
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'El tipo de usuario o la unidad de negocio indicada no existe' }, { status: 400 });
+    }
     throw error;
   }
 }

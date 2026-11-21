@@ -67,20 +67,27 @@ export async function POST(request) {
   }
   const finalNotes = notesArray.length > 0 ? notesArray.join(' ') : null;
 
-  const demo = await prisma.demo.create({
-    data: {
-      clienteId: Number(clienteId),
-      vehiculoId: Number(vehiculoId),
-      usuarioId: assignedUserId,
-      fecha: finalFecha,
-      observaciones: finalNotes,
-    },
-    include: {
-      cliente: true,
-      vehiculo: { include: { marca: true } },
-      usuario: { select: USUARIO_PUBLIC_SELECT },
-    },
-  });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'demo', recursoId: demo.id });
-  return Response.json(demo, { status: 201 });
+  try {
+    const demo = await prisma.demo.create({
+      data: {
+        clienteId: Number(clienteId),
+        vehiculoId: Number(vehiculoId),
+        usuarioId: assignedUserId,
+        fecha: finalFecha,
+        observaciones: finalNotes,
+      },
+      include: {
+        cliente: true,
+        vehiculo: { include: { marca: true } },
+        usuario: { select: USUARIO_PUBLIC_SELECT },
+      },
+    });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'demo', recursoId: demo.id });
+    return Response.json(demo, { status: 201 });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'El cliente, vehículo o usuario indicado no existe' }, { status: 400 });
+    }
+    throw error;
+  }
 }

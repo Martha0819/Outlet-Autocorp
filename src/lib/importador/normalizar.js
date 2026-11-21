@@ -28,3 +28,17 @@ export function numeroOpcional(valor) {
   const numero = aNumero(valor);
   return Number.isFinite(numero) ? numero : null;
 }
+
+const VALORES_VERDADEROS = ['si', 'sí', 's', 'true', 'verdadero', '1', 'yes', 'x'];
+const VALORES_FALSOS = ['no', 'n', 'false', 'falso', '0'];
+
+// undefined = la columna no venía o estaba vacía (no se puede saber qué
+// quiso decir quien llenó el archivo); true/false solo cuando el texto es
+// reconocible como tal, para no adivinar con cualquier texto suelto.
+export function aBooleanoOpcional(valor) {
+  const texto = String(valor ?? '').trim().toLowerCase();
+  if (!texto) return undefined;
+  if (VALORES_VERDADEROS.includes(texto)) return true;
+  if (VALORES_FALSOS.includes(texto)) return false;
+  return undefined;
+}

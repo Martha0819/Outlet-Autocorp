@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/Icons';
 import { TestDriveModal } from '@/components/demos/TestDriveModal';
 import { NegocioModal } from '@/components/clientes/NegocioModal';
+import { ImportadorClientes } from '@/components/clientes/ImportadorClientes';
 
 const inputStyle = {
   width: '100%',
@@ -88,7 +89,8 @@ export function ClientesView() {
 
   // Consultas RTK Query
   const { data: marcas = [] } = useGetCatalogoQuery('marca');
-  const { data: clientesData, isLoading: loadingClientes } = useGetClientesQuery();
+  const { data: clientesData, isLoading: loadingClientes, refetch: refetchClientes } = useGetClientesQuery();
+  const [showImportador, setShowImportador] = useState(false);
   const allClients = useMemo(() => {
     if (!clientesData) return [];
     return Array.isArray(clientesData) ? clientesData : (clientesData.items || []);
@@ -366,8 +368,39 @@ export function ClientesView() {
               <PlusIcon size={14} /> <span>Agregar cliente</span>
             </button>
           )}
+
+          {puedeCrear && (
+            <button
+              onClick={() => setShowImportador((prev) => !prev)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                backgroundColor: '#ffffff',
+                color: '#251f1d',
+                border: '1px solid #d5d0ce',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              <span>{showImportador ? 'Cancelar importación' : 'Importar desde archivo'}</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {showImportador && (
+        <div className="card" style={{ borderRadius: '14px', border: '1px solid #eae7e5', backgroundColor: '#ffffff', padding: '16px 18px', marginTop: 16 }}>
+          <ImportadorClientes
+            onImportacionCompleta={() => {
+              refetchClientes();
+            }}
+          />
+        </div>
+      )}
 
       {/* =========================================================================
           2. TABLA DE CLIENTES

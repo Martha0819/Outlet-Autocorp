@@ -48,21 +48,28 @@ export async function POST(request) {
     return Response.json({ error: 'nombre y telefono son requeridos' }, { status: 400 });
   }
 
-  const cliente = await prisma.cliente.create({
-    data: {
-      nombre,
-      telefono,
-      correo: correo?.trim() ? correo.trim() : null,
-      numeroAcompanantes: Number(numeroAcompanantes ?? acompanantes ?? 0) || 0,
-      visitaMarcaEspecifica: Boolean(visitaMarcaEspecifica),
-      marcaId: visitaMarcaEspecifica && marcaId ? Number(marcaId) : null,
-      // Siempre la unidad del usuario que registra — un cliente queda
-      // atado al dealer que lo atendió, no se elige libremente.
-      unidadNegocioId: auth.usuario.unidadNegocioId,
-      observaciones: observaciones?.trim() ? observaciones.trim() : null,
-    },
-    include: { marca: true },
-  });
-  await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'cliente', recursoId: cliente.id, detalle: cliente.nombre });
-  return Response.json(cliente, { status: 201 });
+  try {
+    const cliente = await prisma.cliente.create({
+      data: {
+        nombre,
+        telefono,
+        correo: correo?.trim() ? correo.trim() : null,
+        numeroAcompanantes: Number(numeroAcompanantes ?? acompanantes ?? 0) || 0,
+        visitaMarcaEspecifica: Boolean(visitaMarcaEspecifica),
+        marcaId: visitaMarcaEspecifica && marcaId ? Number(marcaId) : null,
+        // Siempre la unidad del usuario que registra — un cliente queda
+        // atado al dealer que lo atendió, no se elige libremente.
+        unidadNegocioId: auth.usuario.unidadNegocioId,
+        observaciones: observaciones?.trim() ? observaciones.trim() : null,
+      },
+      include: { marca: true },
+    });
+    await registrarBitacora({ usuarioId: auth.usuario.id, accion: 'crear', recurso: 'cliente', recursoId: cliente.id, detalle: cliente.nombre });
+    return Response.json(cliente, { status: 201 });
+  } catch (error) {
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'La marca indicada no existe' }, { status: 400 });
+    }
+    throw error;
+  }
 }

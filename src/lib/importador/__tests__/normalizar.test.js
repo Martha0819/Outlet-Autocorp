@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aNumero, numeroOpcional } from '../normalizar';
+import { aNumero, numeroOpcional, aBooleanoOpcional } from '../normalizar';
 
 describe('aNumero', () => {
   it('parsea un número plano', () => {
@@ -32,5 +32,27 @@ describe('numeroOpcional', () => {
     expect(numeroOpcional('TANQUE /TAPETES O PELICULA')).toBeNull();
     expect(numeroOpcional('')).toBeNull();
     expect(numeroOpcional(undefined)).toBeNull();
+  });
+});
+
+describe('aBooleanoOpcional', () => {
+  it('reconoce variantes afirmativas', () => {
+    expect(aBooleanoOpcional('Si')).toBe(true);
+    expect(aBooleanoOpcional('SÍ')).toBe(true);
+    expect(aBooleanoOpcional('true')).toBe(true);
+    expect(aBooleanoOpcional('1')).toBe(true);
+    expect(aBooleanoOpcional('x')).toBe(true);
+  });
+
+  it('reconoce variantes negativas', () => {
+    expect(aBooleanoOpcional('No')).toBe(false);
+    expect(aBooleanoOpcional('false')).toBe(false);
+    expect(aBooleanoOpcional('0')).toBe(false);
+  });
+
+  it('devuelve undefined cuando está vacío o no es reconocible, para no adivinar', () => {
+    expect(aBooleanoOpcional('')).toBeUndefined();
+    expect(aBooleanoOpcional(undefined)).toBeUndefined();
+    expect(aBooleanoOpcional('tal vez')).toBeUndefined();
   });
 });

@@ -114,6 +114,9 @@ export async function POST(request) {
     if (error.code === 'P2002') {
       return Response.json({ error: 'Ya existe un vehículo con ese VIN' }, { status: 409 });
     }
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'La marca, unidad de negocio o servicio indicado no existe' }, { status: 400 });
+    }
     throw error;
   }
 }

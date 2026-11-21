@@ -87,6 +87,9 @@ export async function PATCH(request, { params }) {
     if (error.code === 'P2025') {
       return Response.json({ error: 'No encontrado' }, { status: 404 });
     }
+    if (error.code === 'P2003') {
+      return Response.json({ error: 'La línea de negocio, etapa, seguimiento o vehículo indicado no existe' }, { status: 400 });
+    }
     throw error;
   }
 }
