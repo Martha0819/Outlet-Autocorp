@@ -27,7 +27,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
 
   const { data: lineasNegocio = [] } = useGetCatalogoQuery('linea-negocio');
   const { data: etapas = [] } = useGetCatalogoQuery('etapa');
-  const { data: tiposSeguimiento = [] } = useGetCatalogoQuery('tipo-seguimiento');
 
   const { data: clientesData } = useGetClientesQuery();
   const clientes = React.useMemo(() => {
@@ -93,7 +92,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
   const [formData, setFormData] = useState({
     lineaNegocioId: '',
     etapaId: '',
-    tipoSeguimientoId: '',
     vehiculoId: '',
     observaciones: '',
     totalUnidad: '',
@@ -125,7 +123,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       setFormData({
         lineaNegocioId: negocioExistente.lineaNegocioId ? String(negocioExistente.lineaNegocioId) : (lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : ''),
         etapaId: negocioExistente.etapaId ? String(negocioExistente.etapaId) : defaultEtapaId,
-        tipoSeguimientoId: negocioExistente.tipoSeguimientoId ? String(negocioExistente.tipoSeguimientoId) : '',
         vehiculoId: negocioExistente.vehiculoId ? String(negocioExistente.vehiculoId) : '',
         observaciones: negocioExistente.observaciones || '',
         totalUnidad: negocioExistente.totalUnidad != null ? String(negocioExistente.totalUnidad) : '',
@@ -136,7 +133,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       setFormData({
         lineaNegocioId: lineasNegocio[0]?.id ? String(lineasNegocio[0].id) : '',
         etapaId: defaultEtapaId,
-        tipoSeguimientoId: '',
         vehiculoId: '',
         observaciones: '',
         totalUnidad: '',
@@ -188,7 +184,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     const payload = {
       lineaNegocioId: Number(formData.lineaNegocioId),
       etapaId: Number(formData.etapaId),
-      tipoSeguimientoId: formData.tipoSeguimientoId ? Number(formData.tipoSeguimientoId) : null,
       vehiculoId: formData.vehiculoId ? Number(formData.vehiculoId) : null,
       folio: formData.folio?.trim() || null,
       observaciones: formData.observaciones,
@@ -463,20 +458,6 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
               />
             </div>
           )}
-
-          <div className="form-row-2col" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '14px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>
-                Tipo de seguimiento
-              </label>
-              <select value={formData.tipoSeguimientoId} onChange={(e) => setFormData({ ...formData, tipoSeguimientoId: e.target.value })} style={inputStyle}>
-                <option value="">Sin especificar</option>
-                {tiposSeguimiento.map((t) => (
-                  <option key={t.id} value={t.id}>{t.nombre}</option>
-                ))}
-              </select>
-            </div>
-          </div>
 
           <div>
             <label style={{ fontSize: '12px', fontWeight: 700, color: '#251f1d', display: 'block', marginBottom: '5px' }}>

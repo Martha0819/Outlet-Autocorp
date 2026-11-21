@@ -23,7 +23,6 @@ import {
   UsersIcon,
   ClockIcon,
   ListIcon,
-  PhoneIcon,
 } from '@/components/ui/Icons';
 
 // Un catálogo por sección de acordeón. "fields" define qué inputs se
@@ -66,7 +65,6 @@ const CATALOGOS_META = [
       { name: 'orden', label: 'Orden', type: 'number' },
     ],
   },
-  { tipo: 'tipo-seguimiento', label: 'Tipos de seguimiento', icon: PhoneIcon, hasActivo: false, fields: [{ name: 'nombre', label: 'Nombre', type: 'text' }] },
 ];
 
 function emptyForm(fields) {
