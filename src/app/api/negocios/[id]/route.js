@@ -3,6 +3,7 @@ import { USUARIO_PUBLIC_SELECT } from '@/lib/usuarioSelect';
 import { requirePermiso, esAdministrador } from '@/lib/auth/authorize';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 import { validarEnganche } from '@/lib/validations/negocio';
+import { estatusVehiculoParaNegocio } from '@/lib/negocios/estatusVehiculo';
 
 const INCLUDE_NEGOCIO = {
   cliente: true,
@@ -67,12 +68,37 @@ export async function PATCH(request, { params }) {
       include: INCLUDE_NEGOCIO,
     });
 
-    const vId = data.vehiculoId !== undefined ? data.vehiculoId : objetivo.vehiculoId;
-    if (vId) {
-      if (data.totalUnidad !== undefined && data.totalUnidad !== null) {
-        await prisma.vehiculo.update({ where: { id: Number(vId) }, data: { estatus: 'VENDIDO' } });
-      } else if (data.dioEnganche) {
-        await prisma.vehiculo.update({ where: { id: Number(vId) }, data: { estatus: 'APARTADO' } });
+    // Se recalcula el estatus completo (no solo "¿subió a VENDIDO/APARTADO?")
+    // cada vez que algo que lo determina cambió, para que también sepa
+    // BAJAR: un enganche que se desmarca, una venta que se deshace o un
+    // vehículo que se desvincula del negocio deben liberar el vehículo, no
+    // dejarlo atascado en su último estatus.
+    const vIdAnterior = objetivo.vehiculoId;
+    const vIdFinal = data.vehiculoId !== undefined ? data.vehiculoId : objetivo.vehiculoId;
+    const totalUnidadFinal = data.totalUnidad !== undefined ? data.totalUnidad : objetivo.totalUnidad;
+    const tocaEstatusVehiculo = data.vehiculoId !== undefined || data.dioEnganche !== undefined || data.totalUnidad !== undefined;
+
+    if (tocaEstatusVehiculo) {
+      if (vIdFinal) {
+        const estatus = estatusVehiculoParaNegocio({ totalUnidad: totalUnidadFinal, dioEnganche: dioEngancheFinal });
+        await prisma.vehiculo.update({ where: { id: Number(vIdFinal) }, data: { estatus } });
+        await registrarBitacora({
+          usuarioId: auth.usuario.id,
+          accion: 'editar',
+          recurso: 'vehiculo',
+          recursoId: Number(vIdFinal),
+          detalle: `estatus -> ${estatus} (automático por negocio #${negocio.id})`,
+        });
+      }
+      if (vIdAnterior && vIdAnterior !== vIdFinal) {
+        await prisma.vehiculo.update({ where: { id: Number(vIdAnterior) }, data: { estatus: 'DISPONIBLE' } });
+        await registrarBitacora({
+          usuarioId: auth.usuario.id,
+          accion: 'editar',
+          recurso: 'vehiculo',
+          recursoId: Number(vIdAnterior),
+          detalle: `estatus -> DISPONIBLE (liberado al desvincularse del negocio #${negocio.id})`,
+        });
       }
     }
     await registrarBitacora({

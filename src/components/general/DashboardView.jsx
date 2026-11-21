@@ -10,6 +10,7 @@ import { useGetUsuariosQuery } from '@/store/features/usuarios/usuarioApiSlice';
 import { useGetGuardiasQuery } from '@/store/features/guardias/guardiaApiSlice';
 import { useGetActividadesQuery } from '@/store/features/actividades/actividadApiSlice';
 import { useGetDemosQuery, useCreateDemoMutation } from '@/store/features/demos/demoApiSlice';
+import { useGetNegociosQuery } from '@/store/features/negocios/negocioApiSlice';
 import { useGetCatalogoQuery } from '@/store/features/catalogos/catalogoApiSlice';
 import { usePermiso } from '@/store/features/auth/usePermiso';
 import {
@@ -83,6 +84,12 @@ export function DashboardView() {
     return Array.isArray(guardiasData) ? guardiasData : (guardiasData.items || []);
   }, [guardiasData]);
 
+  const { data: negociosData } = useGetNegociosQuery();
+  const negocios = useMemo(() => {
+    if (!negociosData) return [];
+    return Array.isArray(negociosData) ? negociosData : (negociosData.items || []);
+  }, [negociosData]);
+
   const { data: usuarios = [] } = useGetUsuariosQuery();
   const { data: marcas = [] } = useGetCatalogoQuery('marca');
 
@@ -117,7 +124,20 @@ export function DashboardView() {
   const demosCount = demos.length;
   const guardiasCount = guardias.length;
   const soldAmount = soldVehicles.reduce((acc, v) => acc + Number(v.precioRemate || v.precioLista || 0), 0);
-  const engancheAmount = reservedVehicles.reduce((acc, v) => acc + (Number(v.precioRemate || v.precioLista || 0) * 0.2), 0);
+  // Monto real registrado en el negocio (Negocio.enganche), no una
+  // estimación del 20% del precio del vehículo: cada apartado activo trae
+  // su propio negocio con cliente y monto capturados por el asesor.
+  const negociosConEnganche = useMemo(
+    () => negocios.filter((n) => n.dioEnganche && n.vehiculo?.estatus === 'APARTADO'),
+    [negocios]
+  );
+  const engancheAmount = negociosConEnganche.reduce((acc, n) => acc + Number(n.enganche || 0), 0);
+  // Mismo criterio que negociosConEnganche: el negocio que de verdad cerró
+  // la venta de ese vehículo, no solo "algún vehículo en estatus VENDIDO".
+  const negociosVendidos = useMemo(
+    () => negocios.filter((n) => n.totalUnidad !== null && n.totalUnidad !== undefined && n.totalUnidad !== '' && n.vehiculo?.estatus === 'VENDIDO'),
+    [negocios]
+  );
 
   // Embudo de conversión real
   const funnelSteps = useMemo(() => {
@@ -429,10 +449,10 @@ export function DashboardView() {
             {/* KPI 5: Enganche */}
             <div
               className="kpi-card card"
-              onClick={() => router.push('/inventario')}
+              onClick={() => setActiveModal('enganches')}
               tabIndex={0}
               role="button"
-              aria-label="Ver detalle de Enganches"
+              aria-label="Ver clientes con apartado"
             >
               <div className="kpi-top">
                 <div className="kpi-icon-wrapper color-green">
@@ -444,7 +464,7 @@ export function DashboardView() {
                 <span className="kpi-label">Enganche</span>
                 <h2 className="kpi-value">{formatCurrency(engancheAmount)}</h2>
                 <span className="kpi-subtext">
-                  {reservedVehicles.length} enganches recibidos en caja
+                  {negociosConEnganche.length} enganches recibidos en caja
                 </span>
               </div>
             </div>
@@ -452,10 +472,10 @@ export function DashboardView() {
             {/* KPI 6: Ventas */}
             <div
               className="kpi-card card"
-              onClick={() => router.push('/inventario')}
+              onClick={() => setActiveModal('ventas')}
               tabIndex={0}
               role="button"
-              aria-label="Ver detalle de Ventas"
+              aria-label="Ver clientes con venta cerrada"
             >
               <div className="kpi-top">
                 <div className="kpi-icon-wrapper color-orange-dark">
@@ -1006,6 +1026,166 @@ export function DashboardView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'enganches' && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setActiveModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+        >
+          <div
+            className="modal-box animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '560px',
+              width: '100%',
+              maxHeight: '80vh',
+              padding: '24px 28px',
+              border: '1px solid #eae7e5',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#251f1d' }}>
+                Clientes con apartado
+              </h3>
+              <button onClick={() => setActiveModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            {negociosConEnganche.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#8e8784', margin: 0 }}>No hay vehículos apartados con enganche en este momento.</p>
+            ) : (
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {negociosConEnganche.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      setActiveModal(null);
+                      router.push('/clientes');
+                    }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      border: '1px solid #eae7e5',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#251f1d' }}>{n.cliente?.nombre || 'Cliente sin nombre'}</div>
+                      <div style={{ fontSize: 11, color: '#8e8784', marginTop: 2 }}>
+                        {n.vehiculo ? `${n.vehiculo.marca?.nombre || ''} ${n.vehiculo.modelo || n.vehiculo.nombre || ''}`.trim() : 'Sin vehículo'}
+                        {' · '}
+                        {formatDate(n.fecha, 'short')}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#16a34a', whiteSpace: 'nowrap' }}>
+                      {formatCurrency(Number(n.enganche || 0))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'ventas' && (
+        <div
+          className="modal-backdrop"
+          onClick={() => setActiveModal(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 16,
+          }}
+        >
+          <div
+            className="modal-box animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '560px',
+              width: '100%',
+              maxHeight: '80vh',
+              padding: '24px 28px',
+              border: '1px solid #eae7e5',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#251f1d' }}>
+                Clientes con venta cerrada
+              </h3>
+              <button onClick={() => setActiveModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <CloseIcon size={18} />
+              </button>
+            </div>
+
+            {negociosVendidos.length === 0 ? (
+              <p style={{ fontSize: 13, color: '#8e8784', margin: 0 }}>No hay ventas cerradas registradas en este momento.</p>
+            ) : (
+              <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {negociosVendidos.map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      setActiveModal(null);
+                      router.push('/clientes');
+                    }}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: 10,
+                      border: '1px solid #eae7e5',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: '#251f1d' }}>{n.cliente?.nombre || 'Cliente sin nombre'}</div>
+                      <div style={{ fontSize: 11, color: '#8e8784', marginTop: 2 }}>
+                        {n.vehiculo ? `${n.vehiculo.marca?.nombre || ''} ${n.vehiculo.modelo || n.vehiculo.nombre || ''}`.trim() : 'Sin vehículo'}
+                        {' · '}
+                        {formatDate(n.fecha, 'short')}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#ff8901', whiteSpace: 'nowrap' }}>
+                      {formatCurrency(Number(n.totalUnidad || 0))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

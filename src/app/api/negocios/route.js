@@ -3,6 +3,7 @@ import { USUARIO_PUBLIC_SELECT } from '@/lib/usuarioSelect';
 import { requirePermiso, esAdministrador } from '@/lib/auth/authorize';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 import { validarEnganche } from '@/lib/validations/negocio';
+import { estatusVehiculoParaNegocio } from '@/lib/negocios/estatusVehiculo';
 
 const INCLUDE_NEGOCIO = {
   cliente: true,
@@ -92,15 +93,18 @@ export async function POST(request) {
   }
 
   if (vehiculoId) {
-    if (totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '') {
-      await prisma.vehiculo.update({
-        where: { id: Number(vehiculoId) },
-        data: { estatus: 'VENDIDO' },
-      });
-    } else if (dioEnganche) {
-      await prisma.vehiculo.update({
-        where: { id: Number(vehiculoId) },
-        data: { estatus: 'APARTADO' },
+    const estatus = estatusVehiculoParaNegocio({ totalUnidad, dioEnganche });
+    // Un negocio recién creado sin venta ni enganche no mueve el vehículo
+    // (sigue DISPONIBLE, nada que registrar); solo se audita cuando de
+    // verdad lo aparta o lo vende.
+    if (estatus !== 'DISPONIBLE') {
+      await prisma.vehiculo.update({ where: { id: Number(vehiculoId) }, data: { estatus } });
+      await registrarBitacora({
+        usuarioId: auth.usuario.id,
+        accion: 'editar',
+        recurso: 'vehiculo',
+        recursoId: Number(vehiculoId),
+        detalle: `estatus -> ${estatus} (automático por negocio #${negocio.id})`,
       });
     }
   }
