@@ -1107,7 +1107,7 @@ export function ClientesView() {
                     <button
                       onClick={() => {
                         const negocioAbierto = allNegocios
-                          .filter((n) => n.clienteId === currentClient.id && n.totalUnidad == null)
+                          .filter((n) => n.clienteId === currentClient.id && n.tipo !== 'VENTA')
                           .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0];
                         if (negocioAbierto && !puedeEditarNegocio) {
                           notify('No tienes permiso para editar negocios existentes', 'error');
@@ -1238,13 +1238,15 @@ export function ClientesView() {
                       )}
                     </div>
 
-                    {/* Solicitudes / Negocios */}
+                    {/* Solicitudes de crédito — tipo SOLICITUD exclusivamente; un
+                        negocio que ya se volvió apartado o venta se cuenta en
+                        su propia sección, nunca en las dos a la vez. */}
                     {(() => {
-                      const clientNegocios = allNegocios.filter((n) => n.clienteId === currentClient.id);
+                      const clientNegocios = allNegocios.filter((n) => n.clienteId === currentClient.id && n.tipo === 'SOLICITUD');
                       return (
                         <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
                           <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
-                            📄 Solicitudes de Crédito / Compra ({clientNegocios.length})
+                            📄 Solicitudes de Crédito ({clientNegocios.length})
                           </div>
                           {clientNegocios.length === 0 ? (
                             <div style={{ fontSize: '11px', color: '#8e8784' }}>Sin solicitudes de financiamiento registradas.</div>
@@ -1269,7 +1271,7 @@ export function ClientesView() {
 
                     {/* Enganches Recibidos */}
                     {(() => {
-                      const engaches = allNegocios.filter((n) => n.clienteId === currentClient.id && n.dioEnganche);
+                      const engaches = allNegocios.filter((n) => n.clienteId === currentClient.id && n.tipo === 'APARTADO');
                       return (
                         <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
                           <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>
@@ -1303,7 +1305,7 @@ export function ClientesView() {
 
                     {/* Compras Realizadas */}
                     {(() => {
-                      const compras = allNegocios.filter((n) => n.clienteId === currentClient.id && n.totalUnidad != null);
+                      const compras = allNegocios.filter((n) => n.clienteId === currentClient.id && n.tipo === 'VENTA');
                       return (
                         <div style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #eae7e5' }}>
                           <div style={{ fontSize: '13px', fontWeight: 800, color: '#251f1d', marginBottom: '8px' }}>

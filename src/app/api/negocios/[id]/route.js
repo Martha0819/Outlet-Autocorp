@@ -3,7 +3,7 @@ import { USUARIO_PUBLIC_SELECT } from '@/lib/usuarioSelect';
 import { requirePermiso, esAdministrador } from '@/lib/auth/authorize';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 import { validarEnganche } from '@/lib/validations/negocio';
-import { estatusVehiculoParaNegocio } from '@/lib/negocios/estatusVehiculo';
+import { estatusVehiculoParaNegocio, TIPOS_NEGOCIO } from '@/lib/negocios/estatusVehiculo';
 
 const INCLUDE_NEGOCIO = {
   cliente: true,
@@ -40,23 +40,37 @@ export async function PATCH(request, { params }) {
   }
 
   if (body.vehiculoId !== undefined) {
-    if (body.vehiculoId && !esAdministrador(auth.usuario)) {
+    // Solo se valida si de verdad está cambiando de vehículo: el que este
+    // negocio ya tenía asignado puede estar APARTADO/VENDIDO por su propia
+    // causa, y seguir editando el negocio no debe rechazarlo por eso.
+    const cambiaVehiculo = Number(body.vehiculoId) !== objetivo.vehiculoId;
+    if (body.vehiculoId && cambiaVehiculo) {
       const vehiculo = await prisma.vehiculo.findUnique({ where: { id: Number(body.vehiculoId) } });
-      if (!vehiculo || vehiculo.unidadNegocioId !== auth.usuario.unidadNegocioId) {
+      if (!esAdministrador(auth.usuario) && (!vehiculo || vehiculo.unidadNegocioId !== auth.usuario.unidadNegocioId)) {
         return Response.json({ error: 'No puedes vincular un vehículo de otra unidad de negocio' }, { status: 403 });
+      }
+      if (vehiculo && vehiculo.estatus !== 'DISPONIBLE') {
+        return Response.json({ error: 'Ese vehículo ya no está disponible' }, { status: 400 });
       }
     }
     data.vehiculoId = body.vehiculoId ? Number(body.vehiculoId) : null;
   }
 
-  const dioEngancheFinal = body.dioEnganche !== undefined ? Boolean(body.dioEnganche) : objetivo.dioEnganche;
+  // `tipo` es la fuente única de verdad: si llega, dioEnganche se deriva de
+  // él (nunca al revés), para que no puedan quedar en desacuerdo.
+  const tipoFinal = body.tipo !== undefined
+    ? (TIPOS_NEGOCIO.includes(body.tipo) ? body.tipo : objetivo.tipo)
+    : objetivo.tipo;
+  const dioEngancheFinal = tipoFinal === 'APARTADO';
   const engancheFinal = body.enganche !== undefined ? body.enganche : objetivo.enganche;
-  if (body.dioEnganche !== undefined || body.enganche !== undefined) {
+
+  if (body.tipo !== undefined || body.enganche !== undefined) {
     try {
       validarEnganche({ dioEnganche: dioEngancheFinal, enganche: dioEngancheFinal ? engancheFinal : null });
     } catch (error) {
       return Response.json({ error: error.message }, { status: 400 });
     }
+    if (body.tipo !== undefined) data.tipo = tipoFinal;
     data.dioEnganche = dioEngancheFinal;
     data.enganche = dioEngancheFinal ? engancheFinal : null;
   }
@@ -75,12 +89,11 @@ export async function PATCH(request, { params }) {
     // dejarlo atascado en su último estatus.
     const vIdAnterior = objetivo.vehiculoId;
     const vIdFinal = data.vehiculoId !== undefined ? data.vehiculoId : objetivo.vehiculoId;
-    const totalUnidadFinal = data.totalUnidad !== undefined ? data.totalUnidad : objetivo.totalUnidad;
-    const tocaEstatusVehiculo = data.vehiculoId !== undefined || data.dioEnganche !== undefined || data.totalUnidad !== undefined;
+    const tocaEstatusVehiculo = data.vehiculoId !== undefined || data.tipo !== undefined;
 
     if (tocaEstatusVehiculo) {
       if (vIdFinal) {
-        const estatus = estatusVehiculoParaNegocio({ totalUnidad: totalUnidadFinal, dioEnganche: dioEngancheFinal });
+        const estatus = estatusVehiculoParaNegocio({ tipo: tipoFinal });
         await prisma.vehiculo.update({ where: { id: Number(vIdFinal) }, data: { estatus } });
         await registrarBitacora({
           usuarioId: auth.usuario.id,

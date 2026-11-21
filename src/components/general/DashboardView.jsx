@@ -127,17 +127,11 @@ export function DashboardView() {
   // Monto real registrado en el negocio (Negocio.enganche), no una
   // estimación del 20% del precio del vehículo: cada apartado activo trae
   // su propio negocio con cliente y monto capturados por el asesor.
-  const negociosConEnganche = useMemo(
-    () => negocios.filter((n) => n.dioEnganche && n.vehiculo?.estatus === 'APARTADO'),
-    [negocios]
-  );
+  // `tipo` es la fuente única de verdad (ver lib/negocios/estatusVehiculo.js) —
+  // ya no hace falta adivinar con dioEnganche/totalUnidad.
+  const negociosConEnganche = useMemo(() => negocios.filter((n) => n.tipo === 'APARTADO'), [negocios]);
   const engancheAmount = negociosConEnganche.reduce((acc, n) => acc + Number(n.enganche || 0), 0);
-  // Mismo criterio que negociosConEnganche: el negocio que de verdad cerró
-  // la venta de ese vehículo, no solo "algún vehículo en estatus VENDIDO".
-  const negociosVendidos = useMemo(
-    () => negocios.filter((n) => n.totalUnidad !== null && n.totalUnidad !== undefined && n.totalUnidad !== '' && n.vehiculo?.estatus === 'VENDIDO'),
-    [negocios]
-  );
+  const negociosVendidos = useMemo(() => negocios.filter((n) => n.tipo === 'VENTA'), [negocios]);
 
   // Embudo de conversión real
   const funnelSteps = useMemo(() => {

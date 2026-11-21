@@ -3,7 +3,7 @@ import { USUARIO_PUBLIC_SELECT } from '@/lib/usuarioSelect';
 import { requirePermiso, esAdministrador } from '@/lib/auth/authorize';
 import { registrarBitacora } from '@/lib/auth/bitacora';
 import { validarEnganche } from '@/lib/validations/negocio';
-import { estatusVehiculoParaNegocio } from '@/lib/negocios/estatusVehiculo';
+import { estatusVehiculoParaNegocio, TIPOS_NEGOCIO } from '@/lib/negocios/estatusVehiculo';
 
 const INCLUDE_NEGOCIO = {
   cliente: true,
@@ -42,7 +42,6 @@ export async function POST(request) {
     etapaId,
     tipoSeguimientoId,
     vehiculoId,
-    dioEnganche,
     enganche,
     totalUnidad,
     folio,
@@ -53,16 +52,28 @@ export async function POST(request) {
     return Response.json({ error: 'clienteId, lineaNegocioId y etapaId son requeridos' }, { status: 400 });
   }
 
+  // `tipo` es la fuente única de verdad de qué es este negocio (y de si
+  // aparta o no el vehículo); dioEnganche se deriva de él, nunca al revés,
+  // para que ambos no puedan quedar en desacuerdo.
+  const tipo = TIPOS_NEGOCIO.includes(body.tipo) ? body.tipo : 'SOLICITUD';
+  const dioEnganche = tipo === 'APARTADO';
+
   try {
-    validarEnganche({ dioEnganche: Boolean(dioEnganche), enganche: enganche ?? null });
+    validarEnganche({ dioEnganche, enganche: dioEnganche ? (enganche ?? null) : null });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 400 });
   }
 
-  if (!esAdministrador(auth.usuario) && vehiculoId) {
+  if (vehiculoId) {
     const vehiculo = await prisma.vehiculo.findUnique({ where: { id: Number(vehiculoId) } });
-    if (!vehiculo || vehiculo.unidadNegocioId !== auth.usuario.unidadNegocioId) {
+    if (!esAdministrador(auth.usuario) && (!vehiculo || vehiculo.unidadNegocioId !== auth.usuario.unidadNegocioId)) {
       return Response.json({ error: 'No puedes vincular un vehículo de otra unidad de negocio' }, { status: 403 });
+    }
+    // Un vehículo ya APARTADO o VENDIDO (por otro negocio) no puede
+    // volver a asignarse: el filtro del combobox es solo UX, esto es lo
+    // que de verdad lo impide.
+    if (vehiculo && vehiculo.estatus !== 'DISPONIBLE') {
+      return Response.json({ error: 'Ese vehículo ya no está disponible' }, { status: 400 });
     }
   }
 
@@ -77,7 +88,8 @@ export async function POST(request) {
         etapaId: Number(etapaId),
         tipoSeguimientoId: tipoSeguimientoId ? Number(tipoSeguimientoId) : null,
         vehiculoId: vehiculoId ? Number(vehiculoId) : null,
-        dioEnganche: Boolean(dioEnganche),
+        tipo,
+        dioEnganche,
         enganche: dioEnganche ? enganche : null,
         totalUnidad: totalUnidad !== undefined && totalUnidad !== null && totalUnidad !== '' ? totalUnidad : null,
         folio: folio?.trim() ? folio.trim() : null,
@@ -93,7 +105,7 @@ export async function POST(request) {
   }
 
   if (vehiculoId) {
-    const estatus = estatusVehiculoParaNegocio({ totalUnidad, dioEnganche });
+    const estatus = estatusVehiculoParaNegocio({ tipo });
     // Un negocio recién creado sin venta ni enganche no mueve el vehículo
     // (sigue DISPONIBLE, nada que registrar); solo se audita cuando de
     // verdad lo aparta o lo vende.

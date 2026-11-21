@@ -2,19 +2,20 @@ import { describe, it, expect } from 'vitest';
 import { estatusVehiculoParaNegocio } from '../estatusVehiculo';
 
 describe('estatusVehiculoParaNegocio', () => {
-  it('con totalUnidad, es VENDIDO (gana sobre dioEnganche)', () => {
-    expect(estatusVehiculoParaNegocio({ totalUnidad: 300000, dioEnganche: true })).toBe('VENDIDO');
-    expect(estatusVehiculoParaNegocio({ totalUnidad: 300000, dioEnganche: false })).toBe('VENDIDO');
+  it('tipo VENTA es VENDIDO', () => {
+    expect(estatusVehiculoParaNegocio({ tipo: 'VENTA' })).toBe('VENDIDO');
   });
 
-  it('sin totalUnidad pero con dioEnganche, es APARTADO', () => {
-    expect(estatusVehiculoParaNegocio({ totalUnidad: null, dioEnganche: true })).toBe('APARTADO');
-    expect(estatusVehiculoParaNegocio({ totalUnidad: '', dioEnganche: true })).toBe('APARTADO');
-    expect(estatusVehiculoParaNegocio({ totalUnidad: undefined, dioEnganche: true })).toBe('APARTADO');
+  it('tipo APARTADO es APARTADO', () => {
+    expect(estatusVehiculoParaNegocio({ tipo: 'APARTADO' })).toBe('APARTADO');
   });
 
-  it('sin totalUnidad ni dioEnganche, es DISPONIBLE — libera el vehículo', () => {
-    expect(estatusVehiculoParaNegocio({ totalUnidad: null, dioEnganche: false })).toBe('DISPONIBLE');
-    expect(estatusVehiculoParaNegocio({ totalUnidad: '', dioEnganche: undefined })).toBe('DISPONIBLE');
+  it('tipo SOLICITUD nunca aparta la unidad — queda DISPONIBLE', () => {
+    expect(estatusVehiculoParaNegocio({ tipo: 'SOLICITUD' })).toBe('DISPONIBLE');
+  });
+
+  it('sin tipo reconocible, por seguridad queda DISPONIBLE (nunca aparta por accidente)', () => {
+    expect(estatusVehiculoParaNegocio({ tipo: undefined })).toBe('DISPONIBLE');
+    expect(estatusVehiculoParaNegocio({})).toBe('DISPONIBLE');
   });
 });

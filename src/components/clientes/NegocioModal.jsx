@@ -65,17 +65,26 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
     return Array.isArray(vehiculosData) ? vehiculosData : (vehiculosData.items || []);
   }, [vehiculosData]);
 
-  // Se muestran las unidades de inventario. Si el cliente tiene preferencia de marca, se ordenan primero los de su marca.
+  // Solo se pueden asignar vehículos DISPONIBLES — uno ya APARTADO o VENDIDO
+  // no debería poder volver a elegirse en un negocio nuevo. Excepción: el
+  // vehículo que este MISMO negocio ya tiene asignado (al editarlo) se deja
+  // ver aunque esté APARTADO/VENDIDO, porque es justamente el que lo puso
+  // en ese estatus — si no, se perdería de la lista al editar.
+  const vehiculosSeleccionables = React.useMemo(() => {
+    return vehiculos.filter((v) => v.estatus === 'DISPONIBLE' || v.id === negocioExistente?.vehiculoId);
+  }, [vehiculos, negocioExistente]);
+
+  // Si el cliente tiene preferencia de marca, se ordenan primero los de su marca.
   const vehiculosDisponibles = React.useMemo(() => {
-    if (!vehiculos.length) return [];
+    if (!vehiculosSeleccionables.length) return [];
     const cl = activeCliente || cliente;
     if (cl?.visitaMarcaEspecifica && cl?.marcaId) {
-      const deSuMarca = vehiculos.filter((v) => v.marcaId === cl.marcaId);
-      const otras = vehiculos.filter((v) => v.marcaId !== cl.marcaId);
+      const deSuMarca = vehiculosSeleccionables.filter((v) => v.marcaId === cl.marcaId);
+      const otras = vehiculosSeleccionables.filter((v) => v.marcaId !== cl.marcaId);
       return [...deSuMarca, ...otras];
     }
-    return vehiculos;
-  }, [vehiculos, activeCliente, cliente]);
+    return vehiculosSeleccionables;
+  }, [vehiculosSeleccionables, activeCliente, cliente]);
 
   const [createNegocio, { isLoading: isCreating }] = useCreateNegocioMutation();
   const [updateNegocio, { isLoading: isUpdating }] = useUpdateNegocioMutation();
@@ -174,6 +183,8 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       }
     }
 
+    // `tipo` es la fuente única de verdad de qué es este negocio (y de si
+    // aparta o no el vehículo) — el backend deriva dioEnganche de él.
     const payload = {
       lineaNegocioId: Number(formData.lineaNegocioId),
       etapaId: Number(formData.etapaId),
@@ -181,7 +192,7 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
       vehiculoId: formData.vehiculoId ? Number(formData.vehiculoId) : null,
       folio: formData.folio?.trim() || null,
       observaciones: formData.observaciones,
-      dioEnganche: esEnganche,
+      tipo: esVenta ? 'VENTA' : (esEnganche ? 'APARTADO' : 'SOLICITUD'),
       enganche: esEnganche ? Number(formData.enganche) : null,
       totalUnidad: esVenta && formData.totalUnidad !== '' ? Number(formData.totalUnidad) : (negocioExistente ? negocioExistente.totalUnidad : null),
     };
@@ -301,12 +312,16 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
               <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#f3f4f6', border: '1px solid #e5e7eb', fontSize: '12px', color: '#4b5563' }}>
                 Aún no hay vehículos registrados en inventario.
               </div>
+            ) : vehiculosDisponibles.length === 0 ? (
+              <div style={{ padding: '10px 14px', borderRadius: '8px', background: '#fef3c7', border: '1px solid #fde68a', fontSize: '12px', color: '#b45309' }}>
+                No hay vehículos disponibles para asignar.
+              </div>
             ) : (
               <select
                 value={formData.vehiculoId}
                 onChange={(e) => {
                   const selectedId = e.target.value;
-                  const v = vehiculos.find((item) => String(item.id) === String(selectedId));
+                  const v = vehiculosDisponibles.find((item) => String(item.id) === String(selectedId));
                   setFormData((prev) => ({
                     ...prev,
                     vehiculoId: selectedId,
@@ -317,7 +332,7 @@ export function NegocioModal({ isOpen, onClose, cliente, modo = 'solicitud', neg
                 style={inputStyle}
               >
                 <option value="">Seleccionar vehículo...</option>
-                {vehiculos.map((v) => (
+                {vehiculosDisponibles.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.marca?.nombre || ''} {v.nombre} {v.anio} — {formatCurrency(v.precioLista || 0)} [{v.estatus}]
                   </option>
